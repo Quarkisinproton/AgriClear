@@ -2,13 +2,14 @@
 
 import AppLayout from "@/components/AppLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { getProduceById, Produce } from "@/lib/data";
+import { getProduceById, Produce, mockUsers } from "@/lib/data";
 import { cn } from "@/lib/utils";
-import { ArrowLeft, CheckCircle, Package, Tractor, Loader2, DollarSign } from "lucide-react";
+import { ArrowLeft, CheckCircle, Package, Tractor, Loader2, DollarSign, User, Users, Hash, ShieldCheck } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Badge } from "@/components/ui/badge";
 
 export default function ProductDetailsPage() {
   const params = useParams();
@@ -25,7 +26,7 @@ export default function ProductDetailsPage() {
   }, [id]);
 
   const StatusIcon = ({ status }: { status: string }) => {
-    if (status === 'Harvested') return <Tractor className="h-5 w-5" />;
+    if (status === 'Harvested' || status === 'Request Pending') return <Tractor className="h-5 w-5" />;
     if (status === 'Processed') return <Package className="h-5 w-5" />;
     if (status === 'Sold') return <DollarSign className="h-5 w-5" />;
     return <CheckCircle className="h-5 w-5" />;
@@ -78,12 +79,29 @@ export default function ProductDetailsPage() {
           <CardContent>
             <div className="space-y-8">
               <div>
-                <h3 className="text-lg font-semibold mb-2 border-b pb-2">Product Information</h3>
-                <div className="grid grid-cols-2 gap-4 text-sm pt-2">
+                <h3 className="text-lg font-semibold mb-2 border-b pb-2 flex items-center gap-2"><ShieldCheck className="text-primary"/> Blockchain Verified Details</h3>
+                 <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm pt-2">
+                  <p className="text-muted-foreground flex items-center gap-2"><User /> Farmer:</p>
+                  <p>{mockUsers[produce.farmerId as keyof typeof mockUsers]?.name || 'Unknown'}</p>
+                  
+                  <p className="text-muted-foreground flex items-center gap-2"><Users /> Distributor:</p>
+                  <p>{produce.middlemanId ? mockUsers[produce.middlemanId as keyof typeof mockUsers]?.name : 'N/A'}</p>
+
+                  <p className="text-muted-foreground">Quality Grade:</p>
+                  <p><Badge variant="outline">{produce.quality}</Badge></p>
+
                   <p className="text-muted-foreground">Number of Units:</p>
                   <p>{produce.numberOfUnits}</p>
+
                   <p className="text-muted-foreground">Current Status:</p>
                   <p className="font-medium text-primary">{produce.status}</p>
+
+                   {produce.blockchainTransactionHash && (
+                    <>
+                        <p className="text-muted-foreground flex items-center gap-2"><Hash /> Transaction Hash:</p>
+                        <p className="truncate text-xs font-mono bg-muted px-2 py-1 rounded">{produce.blockchainTransactionHash}</p>
+                    </>
+                   )}
                 </div>
               </div>
               <div>

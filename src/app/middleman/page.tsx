@@ -4,10 +4,10 @@ import AppLayout from "@/components/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { getSoldProduce, getPendingProduce, Produce, updateProduceStatus } from "@/lib/data";
+import { getSoldProduce, getPendingProduce, Produce, updateProduceStatus, approveAndSellProduce } from "@/lib/data";
 import { useEffect, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { QrCode, Loader2, Truck, Package, Check, SendToBack } from "lucide-react";
+import { QrCode, Loader2, Truck, Package, Check, SendToBack, ShieldCheck } from "lucide-react";
 import Image from 'next/image';
 import { generateQrCode } from '@/ai/flows/middleman-qr-code-generation';
 import { Skeleton } from "@/components/ui/skeleton";
@@ -30,8 +30,7 @@ export default function MiddlemanPage() {
     const soldData = await getSoldProduce();
     
     // In a real app, you'd probably fetch all statuses you care about
-    // For now, let's just use what we have from the functions
-    const allProduce = await Promise.all([...pendingData, ...soldData]);
+    const allProduce = [...pendingData, ...soldData]; // Simplified for now
     const processed = allProduce.filter(p => p.status === 'Processed');
 
     setPendingList(pendingData);
@@ -47,10 +46,11 @@ export default function MiddlemanPage() {
   const handleApprove = async (produce: Produce) => {
     setIsUpdating(produce.id);
     try {
-      const updatedProduce = await updateProduceStatus(produce.id, 'Sold');
+      // We assume the middleman is 'middleman_01'
+      const updatedProduce = await approveAndSellProduce(produce.id, 'middleman_01');
       if (updatedProduce) {
         toast({
-          title: "Approved",
+          title: "Approved & Recorded on Blockchain",
           description: `Batch ${produce.produceName} has been marked as sold.`,
         });
         setPendingList(prev => prev.filter(p => p.id !== produce.id));
@@ -59,9 +59,10 @@ export default function MiddlemanPage() {
     } catch (error) {
       toast({
         title: "Error",
-        description: "Failed to approve batch.",
+        description: "Failed to approve batch. See console for details.",
         variant: "destructive",
       });
+      console.error(error);
     } finally {
       setIsUpdating(null);
     }
@@ -120,7 +121,7 @@ export default function MiddlemanPage() {
         <Card className="xl:col-span-1">
           <CardHeader>
             <CardTitle>Pending Approval</CardTitle>
-            <CardDescription>These batches are awaiting your approval for sale.</CardDescription>
+            <CardDescription>Approve batches to sell and record on the blockchain.</CardDescription>
           </CardHeader>
           <CardContent>
             {isLoading ? <ListSkeleton /> : pendingList.length > 0 ? (
@@ -129,10 +130,10 @@ export default function MiddlemanPage() {
                   <li key={produce.id} className="p-4 border rounded-lg flex justify-between items-center bg-card">
                     <div>
                       <p className="font-semibold">{produce.produceName}</p>
-                      <p className="text-sm text-muted-foreground">Units: {produce.numberOfUnits} | ID: {produce.id}</p>
+                      <p className="text-sm text-muted-foreground">Units: {produce.numberOfUnits} | Quality: {produce.quality}</p>
                     </div>
                     <Button onClick={() => handleApprove(produce)} disabled={isUpdating === produce.id} variant="secondary">
-                      {isUpdating === produce.id ? <Loader2 className="animate-spin mr-2" /> : <Check className="mr-2" />} Approve
+                      {isUpdating === produce.id ? <Loader2 className="animate-spin mr-2" /> : <ShieldCheck className="mr-2" />} Approve
                     </Button>
                   </li>
                 ))}
