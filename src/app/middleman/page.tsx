@@ -11,6 +11,7 @@ import { QrCode, Loader2, Truck, Package } from "lucide-react";
 import Image from 'next/image';
 import { generateQrCode } from '@/ai/flows/middleman-qr-code-generation';
 import { Skeleton } from "@/components/ui/skeleton";
+import type { GenerateQrCodeOutput } from "@/ai/schemas/middleman-qr-code-schemas";
 
 export default function MiddlemanPage() {
   const [harvestedList, setHarvestedList] = useState<Produce[]>([]);
@@ -25,14 +26,18 @@ export default function MiddlemanPage() {
   const fetchHarvestedProduce = async () => {
     setIsLoading(true);
     const data = await getAllHarvestedProduce();
-    setHarvestedList(data);
+    const allProduce = await Promise.all(data);
+    const harvested = allProduce.filter(p => p.status === 'Harvested');
+    const processed = allProduce.filter(p => p.status === 'Processed');
+    setHarvestedList(harvested);
+    setProcessedList(processed);
     setIsLoading(false);
   };
 
   useEffect(() => {
     fetchHarvestedProduce();
   }, []);
-
+  
   const handleProcess = async (produce: Produce) => {
     setIsProcessing(produce.id);
     try {
@@ -60,7 +65,7 @@ export default function MiddlemanPage() {
     setIsGeneratingQr(productId);
     setQrCodeData(null);
     try {
-      const result = await generateQrCode({ productId });
+      const result: GenerateQrCodeOutput = await generateQrCode({ productId });
       setQrCodeData(result.qrCodeDataUri);
     } catch(e) {
       console.error(e);
