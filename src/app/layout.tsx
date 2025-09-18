@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import { AuthProvider } from '@/lib/auth';
 import { Toaster } from "@/components/ui/toaster";
@@ -6,7 +6,12 @@ import { Toaster } from "@/components/ui/toaster";
 export const metadata: Metadata = {
   title: 'AgriTrack',
   description: 'Tracking agricultural produce from farm to table.',
+  manifest: '/manifest.json',
 };
+
+export const viewport: Viewport = {
+  themeColor: '#F5F5DC',
+}
 
 export default function RootLayout({
   children,
