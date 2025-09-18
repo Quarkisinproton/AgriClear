@@ -8,15 +8,16 @@
  * - GenerateQrCodeOutput - The return type for the generateQrCode function.
  */
 
-import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
+import { generateQrCode as generateQrCodeFromLib } from '@/services/qr-code-service';
+import { z } from 'zod';
 
-const GenerateQrCodeInputSchema = z.object({
+
+export const GenerateQrCodeInputSchema = z.object({
   productId: z.string().describe('The unique ID of the product batch.'),
 });
 export type GenerateQrCodeInput = z.infer<typeof GenerateQrCodeInputSchema>;
 
-const GenerateQrCodeOutputSchema = z.object({
+export const GenerateQrCodeOutputSchema = z.object({
   qrCodeDataUri: z
     .string()
     .describe(
@@ -25,30 +26,8 @@ const GenerateQrCodeOutputSchema = z.object({
 });
 export type GenerateQrCodeOutput = z.infer<typeof GenerateQrCodeOutputSchema>;
 
+
 export async function generateQrCode(input: GenerateQrCodeInput): Promise<GenerateQrCodeOutput> {
-  return generateQrCodeFlow(input);
+  const qrCodeDataUri = await generateQrCodeFromLib(input.productId);
+  return { qrCodeDataUri };
 }
-
-const prompt = ai.definePrompt({
-  name: 'generateQrCodePrompt',
-  input: {schema: GenerateQrCodeInputSchema},
-  output: {schema: GenerateQrCodeOutputSchema},
-  prompt: `You are a QR code generation expert. You will create a QR code
-that encodes the product ID provided. The QR code should be returned as a
-data URI (PNG format). Only expose the product ID in the QR code.
-
-Product ID: {{{productId}}}
-`,
-});
-
-const generateQrCodeFlow = ai.defineFlow(
-  {
-    name: 'generateQrCodeFlow',
-    inputSchema: GenerateQrCodeInputSchema,
-    outputSchema: GenerateQrCodeOutputSchema,
-  },
-  async input => {
-    const {output} = await prompt(input);
-    return output!;
-  }
-);
