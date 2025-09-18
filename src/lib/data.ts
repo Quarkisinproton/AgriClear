@@ -5,7 +5,7 @@ export interface Produce {
   produceName: string;
   numberOfUnits: number;
   farmerId: string;
-  status: 'Harvested' | 'Processed' | 'Sold';
+  status: 'Request Pending' | 'Sold' | 'Processed';
   statusHistory: { status: string; timestamp: string }[];
 }
 
@@ -25,9 +25,9 @@ const initialProduce: Produce[] = [
     produceName: 'Crisp Lettuce',
     numberOfUnits: 300,
     farmerId: 'farmer_01',
-    status: 'Sold',
+    status: 'Request Pending',
     statusHistory: [
-      { status: 'Sold', timestamp: format(new Date(Date.now() - 2 * 24 * 60 * 60 * 1000), 'PPpp') }
+      { status: 'Request Pending', timestamp: format(new Date(Date.now() - 2 * 24 * 60 * 60 * 1000), 'PPpp') }
     ]
   },
   {
@@ -53,7 +53,12 @@ export async function getProduceForFarmer(farmerId: string): Promise<Produce[]> 
   return [...produceData].filter(p => p.farmerId === farmerId).sort((a, b) => new Date(b.statusHistory[0].timestamp).getTime() - new Date(a.statusHistory[0].timestamp).getTime());
 }
 
-export async function getAllSoldProduce(): Promise<Produce[]> {
+export async function getPendingProduce(): Promise<Produce[]> {
+  await delay(500);
+  return [...produceData].filter(p => p.status === 'Request Pending').sort((a, b) => new Date(a.statusHistory[0].timestamp).getTime() - new Date(b.statusHistory[0].timestamp).getTime());
+}
+
+export async function getSoldProduce(): Promise<Produce[]> {
   await delay(500);
   return [...produceData].filter(p => p.status === 'Sold').sort((a, b) => new Date(a.statusHistory[0].timestamp).getTime() - new Date(b.statusHistory[0].timestamp).getTime());
 }
@@ -74,14 +79,14 @@ export async function addProduce(
     produceName,
     numberOfUnits,
     farmerId,
-    status: 'Sold',
-    statusHistory: [{ status: 'Sold', timestamp: format(new Date(), 'PPpp') }],
+    status: 'Request Pending',
+    statusHistory: [{ status: 'Request Pending', timestamp: format(new Date(), 'PPpp') }],
   };
   produceData.unshift(newProduce);
   return newProduce;
 }
 
-export async function updateProduceStatus(id: string, status: 'Processed'): Promise<Produce | undefined> {
+export async function updateProduceStatus(id: string, status: 'Processed' | 'Sold'): Promise<Produce | undefined> {
   await delay(500);
   const produceIndex = produceData.findIndex(p => p.id === id);
   if (produceIndex > -1) {

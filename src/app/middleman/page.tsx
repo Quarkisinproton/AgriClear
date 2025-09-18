@@ -4,42 +4,71 @@ import AppLayout from "@/components/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { getAllSoldProduce, Produce, updateProduceStatus } from "@/lib/data";
+import { getSoldProduce, getPendingProduce, Produce, updateProduceStatus } from "@/lib/data";
 import { useEffect, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { QrCode, Loader2, Truck, Package } from "lucide-react";
+import { QrCode, Loader2, Truck, Package, Check, SendToBack } from "lucide-react";
 import Image from 'next/image';
 import { generateQrCode } from '@/ai/flows/middleman-qr-code-generation';
 import { Skeleton } from "@/components/ui/skeleton";
 import type { GenerateQrCodeOutput } from "@/ai/schemas/middleman-qr-code-schemas";
 
 export default function MiddlemanPage() {
+  const [pendingList, setPendingList] = useState<Produce[]>([]);
   const [soldList, setSoldList] = useState<Produce[]>([]);
   const [processedList, setProcessedList] = useState<Produce[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isProcessing, setIsProcessing] = useState<string | null>(null);
+  const [isUpdating, setIsUpdating] = useState<string | null>(null);
   const [isGeneratingQr, setIsGeneratingQr] = useState<string | null>(null);
   const [qrCodeData, setQrCodeData] = useState<string | null>(null);
 
   const { toast } = useToast();
 
-  const fetchSoldProduce = async () => {
+  const fetchProduce = async () => {
     setIsLoading(true);
-    const data = await getAllSoldProduce();
-    const allProduce = await Promise.all(data);
-    const sold = allProduce.filter(p => p.status === 'Sold');
+    const pendingData = await getPendingProduce();
+    const soldData = await getSoldProduce();
+    
+    // In a real app, you'd probably fetch all statuses you care about
+    // For now, let's just use what we have from the functions
+    const allProduce = await Promise.all([...pendingData, ...soldData]);
     const processed = allProduce.filter(p => p.status === 'Processed');
-    setSoldList(sold);
+
+    setPendingList(pendingData);
+    setSoldList(soldData);
     setProcessedList(processed);
     setIsLoading(false);
   };
 
   useEffect(() => {
-    fetchSoldProduce();
+    fetchProduce();
   }, []);
   
+  const handleApprove = async (produce: Produce) => {
+    setIsUpdating(produce.id);
+    try {
+      const updatedProduce = await updateProduceStatus(produce.id, 'Sold');
+      if (updatedProduce) {
+        toast({
+          title: "Approved",
+          description: `Batch ${produce.produceName} has been marked as sold.`,
+        });
+        setPendingList(prev => prev.filter(p => p.id !== produce.id));
+        setSoldList(prev => [updatedProduce, ...prev]);
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to approve batch.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUpdating(null);
+    }
+  };
+  
   const handleProcess = async (produce: Produce) => {
-    setIsProcessing(produce.id);
+    setIsUpdating(produce.id);
     try {
       const updatedProduce = await updateProduceStatus(produce.id, 'Processed');
       if (updatedProduce) {
@@ -57,7 +86,7 @@ export default function MiddlemanPage() {
         variant: "destructive",
       });
     } finally {
-      setIsProcessing(null);
+      setIsUpdating(null);
     }
   };
 
@@ -87,11 +116,40 @@ export default function MiddlemanPage() {
 
   return (
     <AppLayout expectedRole="Middleman">
-      <div className="grid gap-8 lg:grid-cols-2 lg:items-start">
-        <Card>
+      <div className="grid gap-8 xl:grid-cols-3 lg:items-start">
+        <Card className="xl:col-span-1">
           <CardHeader>
-            <CardTitle>Sold Produce Batches</CardTitle>
-            <CardDescription>These batches are ready to be processed for shipping.</CardDescription>
+            <CardTitle>Pending Approval</CardTitle>
+            <CardDescription>These batches are awaiting your approval for sale.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {isLoading ? <ListSkeleton /> : pendingList.length > 0 ? (
+              <ul className="space-y-4">
+                {pendingList.map((produce) => (
+                  <li key={produce.id} className="p-4 border rounded-lg flex justify-between items-center bg-card">
+                    <div>
+                      <p className="font-semibold">{produce.produceName}</p>
+                      <p className="text-sm text-muted-foreground">Units: {produce.numberOfUnits} | ID: {produce.id}</p>
+                    </div>
+                    <Button onClick={() => handleApprove(produce)} disabled={isUpdating === produce.id} variant="secondary">
+                      {isUpdating === produce.id ? <Loader2 className="animate-spin mr-2" /> : <Check className="mr-2" />} Approve
+                    </Button>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                    <SendToBack className="mx-auto h-12 w-12" />
+                    <p className="mt-4">No pending approvals.</p>
+                </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="xl:col-span-1">
+          <CardHeader>
+            <CardTitle>Sold & Ready to Process</CardTitle>
+            <CardDescription>These approved batches are ready to be processed for shipping.</CardDescription>
           </CardHeader>
           <CardContent>
             {isLoading ? <ListSkeleton /> : soldList.length > 0 ? (
@@ -102,25 +160,25 @@ export default function MiddlemanPage() {
                       <p className="font-semibold">{produce.produceName}</p>
                       <p className="text-sm text-muted-foreground">Units: {produce.numberOfUnits} | ID: {produce.id}</p>
                     </div>
-                    <Button onClick={() => handleProcess(produce)} disabled={isProcessing === produce.id} className="bg-accent hover:bg-accent/90 text-accent-foreground">
-                      {isProcessing === produce.id ? <Loader2 className="animate-spin mr-2" /> : <Truck className="mr-2" />} Process
+                    <Button onClick={() => handleProcess(produce)} disabled={isUpdating === produce.id} className="bg-accent hover:bg-accent/90 text-accent-foreground">
+                      {isUpdating === produce.id ? <Loader2 className="animate-spin mr-2" /> : <Truck className="mr-2" />} Process
                     </Button>
                   </li>
                 ))}
               </ul>
             ) : (
-              <p className="text-muted-foreground text-center py-8">No sold produce available.</p>
+              <p className="text-muted-foreground text-center py-8">No sold produce available to process.</p>
             )}
           </CardContent>
         </Card>
         
-        <Card>
+        <Card className="xl:col-span-1">
             <CardHeader>
-              <CardTitle>Processed Batches</CardTitle>
+              <CardTitle>Processed & Ready for QR</CardTitle>
               <CardDescription>Generate QR codes for these processed batches.</CardDescription>
             </CardHeader>
             <CardContent>
-              {processedList.length > 0 ? (
+              {isLoading ? <ListSkeleton /> : processedList.length > 0 ? (
                 <ul className="space-y-4">
                   {processedList.map((produce) => (
                     <li key={produce.id} className="p-4 border rounded-lg flex justify-between items-center bg-card">

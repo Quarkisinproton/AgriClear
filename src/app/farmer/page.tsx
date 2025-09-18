@@ -9,9 +9,10 @@ import { addProduce, getProduceForFarmer, Produce } from "@/lib/data";
 import { useEffect, useState } from "react";
 import { useForm, SubmitHandler } from "react-hook-form";
 import { useToast } from "@/hooks/use-toast";
-import { Carrot, PlusCircle, Loader2 } from "lucide-react";
+import { Carrot, PlusCircle, Loader2, Hourglass, CheckCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { cn } from "@/lib/utils";
 
 type Inputs = {
   produceName: string;
@@ -40,7 +41,7 @@ export default function FarmerPage() {
       await addProduce(data.produceName, Number(data.numberOfUnits), "farmer_01");
       toast({
         title: "Success",
-        description: "New produce batch has been marked as sold.",
+        description: "New produce batch has been submitted for approval.",
       });
       reset();
       fetchProduce();
@@ -53,13 +54,39 @@ export default function FarmerPage() {
     }
   };
 
+  const getStatusBadge = (status: Produce['status']) => {
+    switch (status) {
+      case 'Sold':
+        return <Badge variant="secondary" className="bg-green-600 text-white">Sold</Badge>;
+      case 'Processed':
+        return <Badge className="bg-primary text-primary-foreground">Processed</Badge>;
+      case 'Request Pending':
+        return <Badge variant="outline">Request Pending</Badge>;
+      default:
+        return <Badge variant="default">{status}</Badge>;
+    }
+  }
+  
+    const getStatusIcon = (status: Produce['status']) => {
+        switch (status) {
+            case 'Sold':
+                return <CheckCircle className="w-8 h-8 text-green-600" />;
+            case 'Processed':
+                return <Carrot className="w-8 h-8 text-primary" />;
+            case 'Request Pending':
+                return <Hourglass className="w-8 h-8 text-amber-500" />;
+            default:
+                return <Carrot className="w-8 h-8 text-accent" />;
+        }
+    }
+
   return (
     <AppLayout expectedRole="Farmer">
       <div className="space-y-8">
         <Card>
           <CardHeader>
-            <CardTitle>Register Sold Produce Batch</CardTitle>
-            <CardDescription>Enter details for a new batch of produce you've sold.</CardDescription>
+            <CardTitle>Register Produce Batch for Sale</CardTitle>
+            <CardDescription>Enter details for a new batch of produce you want to sell.</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit(onSubmit)} className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
@@ -74,7 +101,7 @@ export default function FarmerPage() {
                 {errors.numberOfUnits && <p className="text-sm text-destructive">{errors.numberOfUnits.message}</p>}
               </div>
               <Button type="submit" disabled={isSubmitting} className="w-full md:w-auto bg-accent hover:bg-accent/90 text-accent-foreground mt-auto">
-                {isSubmitting ? <Loader2 className="animate-spin mr-2" /> : <PlusCircle className="mr-2" />} Submit Batch
+                {isSubmitting ? <Loader2 className="animate-spin mr-2" /> : <PlusCircle className="mr-2" />} Submit for Approval
               </Button>
             </form>
           </CardContent>
@@ -95,15 +122,13 @@ export default function FarmerPage() {
                 {produceList.map((produce) => (
                   <li key={produce.id} className="p-4 border rounded-lg flex justify-between items-center bg-card">
                     <div className="flex items-center gap-4">
-                      <Carrot className="w-8 h-8 text-accent" />
+                      {getStatusIcon(produce.status)}
                       <div>
                         <p className="font-semibold">{produce.produceName}</p>
                         <p className="text-sm text-muted-foreground">Units: {produce.numberOfUnits} | ID: {produce.id}</p>
                       </div>
                     </div>
-                    <Badge variant={produce.status === 'Sold' ? 'secondary' : 'default'} className={produce.status === 'Processed' ? 'bg-primary text-primary-foreground' : ''}>
-                      {produce.status}
-                    </Badge>
+                    {getStatusBadge(produce.status)}
                   </li>
                 ))}
               </ul>
