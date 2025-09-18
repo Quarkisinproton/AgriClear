@@ -5,7 +5,7 @@ export interface Produce {
   produceName: string;
   numberOfUnits: number;
   farmerId: string;
-  status: 'Harvested' | 'Processed';
+  status: 'Harvested' | 'Processed' | 'Sold';
   statusHistory: { status: string; timestamp: string }[];
 }
 
@@ -15,9 +15,9 @@ const initialProduce: Produce[] = [
     produceName: 'Organic Tomatoes',
     numberOfUnits: 150,
     farmerId: 'farmer_01',
-    status: 'Harvested',
+    status: 'Sold',
     statusHistory: [
-      { status: 'Harvested', timestamp: format(new Date(), 'PPpp') }
+      { status: 'Sold', timestamp: format(new Date(), 'PPpp') }
     ]
   },
   {
@@ -25,9 +25,9 @@ const initialProduce: Produce[] = [
     produceName: 'Crisp Lettuce',
     numberOfUnits: 300,
     farmerId: 'farmer_01',
-    status: 'Harvested',
+    status: 'Sold',
     statusHistory: [
-      { status: 'Harvested', timestamp: format(new Date(Date.now() - 2 * 24 * 60 * 60 * 1000), 'PPpp') }
+      { status: 'Sold', timestamp: format(new Date(Date.now() - 2 * 24 * 60 * 60 * 1000), 'PPpp') }
     ]
   },
   {
@@ -37,7 +37,7 @@ const initialProduce: Produce[] = [
     farmerId: 'farmer_02',
     status: 'Processed',
     statusHistory: [
-      { status: 'Harvested', timestamp: format(new Date(Date.now() - 5 * 24 * 60 * 60 * 1000), 'PPpp') },
+      { status: 'Sold', timestamp: format(new Date(Date.now() - 5 * 24 * 60 * 60 * 1000), 'PPpp') },
       { status: 'Processed', timestamp: format(new Date(Date.now() - 3 * 24 * 60 * 60 * 1000), 'PPpp') }
     ]
   },
@@ -53,9 +53,9 @@ export async function getProduceForFarmer(farmerId: string): Promise<Produce[]> 
   return [...produceData].filter(p => p.farmerId === farmerId).sort((a, b) => new Date(b.statusHistory[0].timestamp).getTime() - new Date(a.statusHistory[0].timestamp).getTime());
 }
 
-export async function getAllHarvestedProduce(): Promise<Produce[]> {
+export async function getAllSoldProduce(): Promise<Produce[]> {
   await delay(500);
-  return [...produceData].filter(p => p.status === 'Harvested').sort((a, b) => new Date(a.statusHistory[0].timestamp).getTime() - new Date(b.statusHistory[0].timestamp).getTime());
+  return [...produceData].filter(p => p.status === 'Sold').sort((a, b) => new Date(a.statusHistory[0].timestamp).getTime() - new Date(b.statusHistory[0].timestamp).getTime());
 }
 
 export async function getProduceById(id: string): Promise<Produce | undefined> {
@@ -74,8 +74,8 @@ export async function addProduce(
     produceName,
     numberOfUnits,
     farmerId,
-    status: 'Harvested',
-    statusHistory: [{ status: 'Harvested', timestamp: format(new Date(), 'PPpp') }],
+    status: 'Sold',
+    statusHistory: [{ status: 'Sold', timestamp: format(new Date(), 'PPpp') }],
   };
   produceData.unshift(newProduce);
   return newProduce;

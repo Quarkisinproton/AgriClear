@@ -40,7 +40,7 @@ export default function FarmerPage() {
       await addProduce(data.produceName, Number(data.numberOfUnits), "farmer_01");
       toast({
         title: "Success",
-        description: "New produce batch has been added.",
+        description: "New produce batch has been marked as sold.",
       });
       reset();
       fetchProduce();
@@ -58,8 +58,8 @@ export default function FarmerPage() {
       <div className="space-y-8">
         <Card>
           <CardHeader>
-            <CardTitle>Add New Produce Batch</CardTitle>
-            <CardDescription>Enter details for a new batch of produce you've harvested.</CardDescription>
+            <CardTitle>Register Sold Produce Batch</CardTitle>
+            <CardDescription>Enter details for a new batch of produce you've sold.</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit(onSubmit)} className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
@@ -101,7 +101,7 @@ export default function FarmerPage() {
                         <p className="text-sm text-muted-foreground">Units: {produce.numberOfUnits} | ID: {produce.id}</p>
                       </div>
                     </div>
-                    <Badge variant={produce.status === 'Harvested' ? 'secondary' : 'default'} className={produce.status === 'Processed' ? 'bg-primary text-primary-foreground' : ''}>
+                    <Badge variant={produce.status === 'Sold' ? 'secondary' : 'default'} className={produce.status === 'Processed' ? 'bg-primary text-primary-foreground' : ''}>
                       {produce.status}
                     </Badge>
                   </li>

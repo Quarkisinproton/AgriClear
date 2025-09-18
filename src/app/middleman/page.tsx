@@ -4,7 +4,7 @@ import AppLayout from "@/components/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { getAllHarvestedProduce, Produce, updateProduceStatus } from "@/lib/data";
+import { getAllSoldProduce, Produce, updateProduceStatus } from "@/lib/data";
 import { useEffect, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { QrCode, Loader2, Truck, Package } from "lucide-react";
@@ -14,7 +14,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import type { GenerateQrCodeOutput } from "@/ai/schemas/middleman-qr-code-schemas";
 
 export default function MiddlemanPage() {
-  const [harvestedList, setHarvestedList] = useState<Produce[]>([]);
+  const [soldList, setSoldList] = useState<Produce[]>([]);
   const [processedList, setProcessedList] = useState<Produce[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState<string | null>(null);
@@ -23,19 +23,19 @@ export default function MiddlemanPage() {
 
   const { toast } = useToast();
 
-  const fetchHarvestedProduce = async () => {
+  const fetchSoldProduce = async () => {
     setIsLoading(true);
-    const data = await getAllHarvestedProduce();
+    const data = await getAllSoldProduce();
     const allProduce = await Promise.all(data);
-    const harvested = allProduce.filter(p => p.status === 'Harvested');
+    const sold = allProduce.filter(p => p.status === 'Sold');
     const processed = allProduce.filter(p => p.status === 'Processed');
-    setHarvestedList(harvested);
+    setSoldList(sold);
     setProcessedList(processed);
     setIsLoading(false);
   };
 
   useEffect(() => {
-    fetchHarvestedProduce();
+    fetchSoldProduce();
   }, []);
   
   const handleProcess = async (produce: Produce) => {
@@ -47,7 +47,7 @@ export default function MiddlemanPage() {
           title: "Success",
           description: `Batch ${produce.produceName} has been processed.`,
         });
-        setHarvestedList(prev => prev.filter(p => p.id !== produce.id));
+        setSoldList(prev => prev.filter(p => p.id !== produce.id));
         setProcessedList(prev => [updatedProduce, ...prev]);
       }
     } catch (error) {
@@ -90,13 +90,13 @@ export default function MiddlemanPage() {
       <div className="grid gap-8 lg:grid-cols-2 lg:items-start">
         <Card>
           <CardHeader>
-            <CardTitle>Harvested Produce Batches</CardTitle>
+            <CardTitle>Sold Produce Batches</CardTitle>
             <CardDescription>These batches are ready to be processed for shipping.</CardDescription>
           </CardHeader>
           <CardContent>
-            {isLoading ? <ListSkeleton /> : harvestedList.length > 0 ? (
+            {isLoading ? <ListSkeleton /> : soldList.length > 0 ? (
               <ul className="space-y-4">
-                {harvestedList.map((produce) => (
+                {soldList.map((produce) => (
                   <li key={produce.id} className="p-4 border rounded-lg flex justify-between items-center bg-card">
                     <div>
                       <p className="font-semibold">{produce.produceName}</p>
@@ -109,7 +109,7 @@ export default function MiddlemanPage() {
                 ))}
               </ul>
             ) : (
-              <p className="text-muted-foreground text-center py-8">No harvested produce available.</p>
+              <p className="text-muted-foreground text-center py-8">No sold produce available.</p>
             )}
           </CardContent>
         </Card>

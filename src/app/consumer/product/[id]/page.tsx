@@ -4,7 +4,7 @@ import AppLayout from "@/components/AppLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { getProduceById, Produce } from "@/lib/data";
 import { cn } from "@/lib/utils";
-import { ArrowLeft, CheckCircle, Package, Tractor, Loader2 } from "lucide-react";
+import { ArrowLeft, CheckCircle, Package, Tractor, Loader2, DollarSign } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -27,6 +27,7 @@ export default function ProductDetailsPage() {
   const StatusIcon = ({ status }: { status: string }) => {
     if (status === 'Harvested') return <Tractor className="h-5 w-5" />;
     if (status === 'Processed') return <Package className="h-5 w-5" />;
+    if (status === 'Sold') return <DollarSign className="h-5 w-5" />;
     return <CheckCircle className="h-5 w-5" />;
   };
   
