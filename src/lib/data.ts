@@ -17,7 +17,6 @@ const contractABI: any[] = [
   //   "type": "function"
   // },
   // ... Paste the full ABI array here
-  [
     {
       "anonymous": false,
       "inputs": [
@@ -152,7 +151,6 @@ const contractABI: any[] = [
       "stateMutability": "view",
       "type": "function"
     }
-  ]
 ];
 // ------------------------------------------
 
@@ -255,7 +253,10 @@ async function recordTransactionOnBlockchain(
         if (error.code === 'ACTION_REJECTED') {
             throw new Error('Transaction was rejected in MetaMask.');
         }
-        throw new Error(error.message || 'An unknown error occurred during the blockchain transaction.');
+        if (error.message.includes('Incorrect wallet connected')) {
+            throw error; // Re-throw the specific error for the UI to catch
+        }
+        throw new Error('An unknown error occurred during the blockchain transaction.');
     }
 }
 // -----------------------------
