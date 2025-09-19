@@ -74,7 +74,7 @@ export default function ScanPage() {
                     if (productId) {
                         // Stop scanning and navigate
                         setScanMode(false); 
-                        router.push(`/consumer/product/${productId}`);
+                        router.push(`product/${productId}`);
                         return; 
                     }
                 }
