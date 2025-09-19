@@ -7,12 +7,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useRouter } from "next/navigation";
 import { useForm, SubmitHandler } from "react-hook-form";
-import { ArrowLeft, Search, Camera, CameraOff, AlertTriangle } from "lucide-react";
+import { ArrowLeft, Search, Camera, CameraOff } from "lucide-react";
 import Link from "next/link";
 import { useToast } from "@/hooks/use-toast";
 import { useEffect, useRef, useState } from "react";
 import jsQR from "jsqr";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 type Inputs = {
   productId: string;
@@ -70,16 +69,13 @@ export default function ScanPage() {
                 });
 
                 if (code) {
-                    try {
-                        const url = new URL(code.data);
-                        const pathSegments = url.pathname.split('/');
-                        const productId = pathSegments.pop(); // Get last segment
-                        if (productId && url.pathname.includes('/consumer/product/')) {
-                            router.push(`/consumer/product/${productId}`);
-                            return; // Stop scanning
-                        }
-                    } catch (e) {
-                       // Not a valid URL, do nothing
+                    // The QR code data is the product ID itself.
+                    const productId = code.data;
+                    if (productId) {
+                        // Stop scanning and navigate
+                        setScanMode(false); 
+                        router.push(`/consumer/product/${productId}`);
+                        return; 
                     }
                 }
             }
