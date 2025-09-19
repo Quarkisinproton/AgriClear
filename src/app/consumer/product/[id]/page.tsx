@@ -101,7 +101,7 @@ export default function ProductDetailsPage() {
                   <p>{getMiddlemanName(produce.middlemanId)}</p>
 
                   <p className="text-muted-foreground">Quality Grade:</p>
-                  <p><Badge variant="outline">{produce.quality}</Badge></p>
+                  <div><Badge variant="outline">{produce.quality}</Badge></div>
 
                   <p className="text-muted-foreground">Number of Units:</p>
                   <p>{produce.numberOfUnits}</p>
