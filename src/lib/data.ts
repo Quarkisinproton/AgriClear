@@ -250,7 +250,7 @@ async function recordTransactionOnBlockchain(
             throw new Error('Transaction was rejected in MetaMask.');
         }
         if (error.message.includes('Incorrect wallet connected')) {
-            throw error; // Re-throw the specific error for the UI to catch
+             throw new Error(error.message); // Re-throw the specific error for the UI to catch
         }
         throw new Error('An unknown error occurred during the blockchain transaction.');
     }
@@ -270,6 +270,11 @@ export async function getPendingProduce(): Promise<Produce[]> {
 export async function getSoldProduce(): Promise<Produce[]> {
   await delay(500);
   return [...produceData].filter(p => p.status === 'Sold').sort((a, b) => new Date(a.statusHistory[0].timestamp).getTime() - new Date(b.statusHistory[0].timestamp).getTime());
+}
+
+export async function getProcessedProduce(): Promise<Produce[]> {
+    await delay(500);
+    return [...produceData].filter(p => p.status === 'Processed').sort((a, b) => new Date(a.statusHistory[a.statusHistory.length -1].timestamp).getTime() - new Date(b.statusHistory[b.statusHistory.length - 1].timestamp).getTime());
 }
 
 export async function getProduceById(id: string): Promise<Produce | undefined> {
@@ -303,17 +308,20 @@ export async function approveAndSellProduce(produceId: string): Promise<Produce 
         throw new Error("Produce not found.");
     }
 
-    const produceToUpdate = produceData[produceIndex];
+    let produceToUpdate = produceData[produceIndex];
 
     // Call the real blockchain service
     const { txHash, middlemanAddress } = await recordTransactionOnBlockchain(produceToUpdate);
 
     // Now update the local data with the new status and blockchain info
-    produceToUpdate.status = 'Sold';
-    produceToUpdate.middlemanId = middlemanAddress;
-    produceToUpdate.blockchainTransactionHash = txHash;
-    produceToUpdate.statusHistory.push({ status: 'Sold', timestamp: format(new Date(), 'PPpp') });
-
+    produceToUpdate = {
+        ...produceToUpdate,
+        status: 'Sold',
+        middlemanId: middlemanAddress,
+        blockchainTransactionHash: txHash,
+        statusHistory: [...produceToUpdate.statusHistory, { status: 'Sold', timestamp: format(new Date(), 'PPpp') }]
+    };
+    
     produceData[produceIndex] = produceToUpdate;
     return produceToUpdate;
 }

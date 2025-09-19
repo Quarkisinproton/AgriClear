@@ -4,7 +4,7 @@ import AppLayout from "@/components/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { getSoldProduce, getPendingProduce, Produce, updateProduceStatus, approveAndSellProduce } from "@/lib/data";
+import { getSoldProduce, getPendingProduce, Produce, updateProduceStatus, approveAndSellProduce, getProcessedProduce } from "@/lib/data";
 import { useEffect, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { QrCode, Loader2, Truck, Package, Check, SendToBack, ShieldCheck } from "lucide-react";
@@ -31,13 +31,11 @@ export default function MiddlemanPage() {
     try {
         const pendingData = await getPendingProduce();
         const soldData = await getSoldProduce();
-        
-        const allProduce = [...pendingData, ...soldData]; 
-        const processed = allProduce.filter(p => p.status === 'Processed');
+        const processedData = await getProcessedProduce();
 
         setPendingList(pendingData);
         setSoldList(soldData);
-        setProcessedList(processed);
+        setProcessedList(processedData);
     } catch (error) {
         console.error(error);
         toast({ title: "Error", description: "Failed to fetch produce data.", variant: "destructive" });
