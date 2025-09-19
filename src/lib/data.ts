@@ -3,7 +3,7 @@ import { ethers, BrowserProvider, Contract } from 'ethers';
 
 // --- IMPORTANT: Smart Contract Details ---
 // You must deploy your contract and paste the address and ABI here.
-const contractAddress = 'YOUR_CONTRACT_ADDRESS_HERE';
+const contractAddress = '0x1eB038c7C832BeF1BCe3850dB788b518c2cDbd0b';
 const contractABI: any[] = [
   // This is the Application Binary Interface (ABI) of your contract.
   // You can get this from Remix after you compile your contract.
@@ -215,13 +215,14 @@ async function recordTransactionOnBlockchain(
     if (typeof window.ethereum === 'undefined') {
         throw new Error('MetaMask is not installed. Please install it to continue.');
     }
-    if (!contractAddress || contractAddress === '0x1eB038c7C832BeF1BCe3850dB788b518c2cDbd0b') {
+    if (!contractAddress || contractAddress === 'YOUR_CONTRACT_ADDRESS_HERE') {
         throw new Error('Contract address is not set. Please update it in src/lib/data.ts');
     }
 
     try {
         // Connect to the user's wallet (MetaMask)
         const provider = new BrowserProvider(window.ethereum);
+        await provider.send("eth_requestAccounts", []); // Request account access
         const signer = await provider.getSigner();
 
         // Ensure the signer is the correct middleman
