@@ -2,7 +2,6 @@
 
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { mockUsers } from './data';
 
 type Role = 'Farmer' | 'Middleman' | 'Consumer' | null;
 type UserId = '0x3EcF027EB869f93BB064352C5c9dF965C4bfe3e8' | '0x33C22589a30a70852131e124e0AcA0f7b1A35824' | 'consumer_user' | null;
