@@ -11,6 +11,8 @@ import { useEffect, useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 
+type MockUserKeys = keyof typeof mockUsers;
+
 export default function ProductDetailsPage() {
   const params = useParams();
   const id = params.id as string;
@@ -58,6 +60,17 @@ export default function ProductDetailsPage() {
      </CardContent>
   );
 
+  const getFarmerName = (id: string) => {
+    const key = Object.keys(mockUsers).find(k => k.toLowerCase() === id.toLowerCase()) as MockUserKeys | undefined;
+    return key ? mockUsers[key]?.name : 'Unknown';
+  }
+  
+  const getMiddlemanName = (id?: string) => {
+    if (!id) return 'N/A';
+    const key = Object.keys(mockUsers).find(k => k.toLowerCase() === id.toLowerCase()) as MockUserKeys | undefined;
+    return key ? mockUsers[key]?.name : 'N/A';
+  }
+
   return (
     <AppLayout expectedRole="Consumer">
       <Link href="/consumer/scan" className="inline-flex items-center gap-2 mb-4 text-sm font-medium text-muted-foreground hover:text-foreground">
@@ -82,10 +95,10 @@ export default function ProductDetailsPage() {
                 <h3 className="text-lg font-semibold mb-2 border-b pb-2 flex items-center gap-2"><ShieldCheck className="text-primary"/> Blockchain Verified Details</h3>
                  <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm pt-2">
                   <p className="text-muted-foreground flex items-center gap-2"><User /> Farmer:</p>
-                  <p>{mockUsers[produce.farmerId as keyof typeof mockUsers]?.name || 'Unknown'}</p>
+                  <p>{getFarmerName(produce.farmerId)}</p>
                   
                   <p className="text-muted-foreground flex items-center gap-2"><Users /> Distributor:</p>
-                  <p>{produce.middlemanId ? mockUsers[produce.middlemanId as keyof typeof mockUsers]?.name : 'N/A'}</p>
+                  <p>{getMiddlemanName(produce.middlemanId)}</p>
 
                   <p className="text-muted-foreground">Quality Grade:</p>
                   <p><Badge variant="outline">{produce.quality}</Badge></p>

@@ -12,8 +12,10 @@ import Image from 'next/image';
 import { generateQrCode } from '@/ai/flows/middleman-qr-code-generation';
 import { Skeleton } from "@/components/ui/skeleton";
 import type { GenerateQrCodeOutput } from "@/ai/schemas/middleman-qr-code-schemas";
+import { useAuth } from "@/lib/auth";
 
 export default function MiddlemanPage() {
+  const { userId } = useAuth();
   const [pendingList, setPendingList] = useState<Produce[]>([]);
   const [soldList, setSoldList] = useState<Produce[]>([]);
   const [processedList, setProcessedList] = useState<Produce[]>([]);
@@ -26,17 +28,22 @@ export default function MiddlemanPage() {
 
   const fetchProduce = async () => {
     setIsLoading(true);
-    const pendingData = await getPendingProduce();
-    const soldData = await getSoldProduce();
-    
-    // In a real app, you'd probably fetch all statuses you care about
-    const allProduce = [...pendingData, ...soldData]; // Simplified for now
-    const processed = allProduce.filter(p => p.status === 'Processed');
+    try {
+        const pendingData = await getPendingProduce();
+        const soldData = await getSoldProduce();
+        
+        const allProduce = [...pendingData, ...soldData]; 
+        const processed = allProduce.filter(p => p.status === 'Processed');
 
-    setPendingList(pendingData);
-    setSoldList(soldData);
-    setProcessedList(processed);
-    setIsLoading(false);
+        setPendingList(pendingData);
+        setSoldList(soldData);
+        setProcessedList(processed);
+    } catch (error) {
+        console.error(error);
+        toast({ title: "Error", description: "Failed to fetch produce data.", variant: "destructive" });
+    } finally {
+        setIsLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -44,22 +51,24 @@ export default function MiddlemanPage() {
   }, []);
   
   const handleApprove = async (produce: Produce) => {
+    if (!userId) {
+        toast({ title: "Error", description: "Middleman not identified.", variant: "destructive" });
+        return;
+    }
     setIsUpdating(produce.id);
     try {
-      // We assume the middleman is 'middleman_01'
-      const updatedProduce = await approveAndSellProduce(produce.id, 'middleman_01');
+      const updatedProduce = await approveAndSellProduce(produce.id, userId);
       if (updatedProduce) {
         toast({
           title: "Approved & Recorded on Blockchain",
           description: `Batch ${produce.produceName} has been marked as sold.`,
         });
-        setPendingList(prev => prev.filter(p => p.id !== produce.id));
-        setSoldList(prev => [updatedProduce, ...prev]);
+        await fetchProduce();
       }
-    } catch (error) {
+    } catch (error: any) {
       toast({
-        title: "Error",
-        description: "Failed to approve batch. See console for details.",
+        title: "Error Approving Batch",
+        description: error.message || "An unknown error occurred.",
         variant: "destructive",
       });
       console.error(error);
@@ -77,8 +86,7 @@ export default function MiddlemanPage() {
           title: "Success",
           description: `Batch ${produce.produceName} has been processed.`,
         });
-        setSoldList(prev => prev.filter(p => p.id !== produce.id));
-        setProcessedList(prev => [updatedProduce, ...prev]);
+        await fetchProduce();
       }
     } catch (error) {
       toast({

@@ -1,24 +1,42 @@
 import { format } from 'date-fns';
+import { ethers, BrowserProvider, Contract } from 'ethers';
+
+// --- IMPORTANT: Smart Contract Details ---
+// You must deploy your contract and paste the address and ABI here.
+const contractAddress = 'YOUR_CONTRACT_ADDRESS_HERE';
+const contractABI: any[] = [
+  // This is the Application Binary Interface (ABI) of your contract.
+  // You can get this from Remix after you compile your contract.
+  // It's a JSON array that describes how to interact with your contract.
+  // Example:
+  // {
+  //   "inputs": [],
+  //   "name": "getBatchCount",
+  //   "outputs": [ { "internalType": "uint256", "name": "", "type": "uint256" } ],
+  //   "stateMutability": "view",
+  //   "type": "function"
+  // },
+  // ... Paste the full ABI array here
+];
+// ------------------------------------------
 
 export interface Produce {
   id: string;
   produceName: string;
   numberOfUnits: number;
   quality: 'Grade A' | 'Grade B' | 'Grade C';
-  farmerId: string;
-  middlemanId?: string;
+  farmerId: string; // This will be the farmer's wallet address
+  middlemanId?: string; // This will be the middleman's wallet address
   blockchainTransactionHash?: string;
   status: 'Request Pending' | 'Sold' | 'Processed';
   statusHistory: { status: string; timestamp: string }[];
 }
 
-// Mock user data
+// Mock user data with real wallet addresses
 export const mockUsers = {
-    farmer_01: { name: 'Green Valley Farms' },
-    farmer_02: { name: 'Sunshine Orchards' },
-    middleman_01: { name: 'Fresh Produce Distributors' },
+    '0x3EcF027EB869f93BB064352C5c9dF965C4bfe3e8': { name: 'Green Valley Farms', role: 'Farmer' },
+    '0x33C22589a30a70852131e124e0AcA0f7b1A35824': { name: 'Fresh Produce Distributors', role: 'Middleman' },
 };
-
 
 const initialProduce: Produce[] = [
   {
@@ -26,13 +44,13 @@ const initialProduce: Produce[] = [
     produceName: 'Organic Tomatoes',
     numberOfUnits: 150,
     quality: 'Grade A',
-    farmerId: 'farmer_01',
+    farmerId: '0x3EcF027EB869f93BB064352C5c9dF965C4bfe3e8',
     status: 'Sold',
     statusHistory: [
       { status: 'Request Pending', timestamp: format(new Date(Date.now() - 3 * 24 * 60 * 60 * 1000), 'PPpp') },
       { status: 'Sold', timestamp: format(new Date(), 'PPpp') }
     ],
-    middlemanId: 'middleman_01',
+    middlemanId: '0x33C22589a30a70852131e124e0AcA0f7b1A35824',
     blockchainTransactionHash: '0x' + Array(64).fill(0).map(() => Math.floor(Math.random() * 16).toString(16)).join(''),
   },
   {
@@ -40,51 +58,74 @@ const initialProduce: Produce[] = [
     produceName: 'Crisp Lettuce',
     numberOfUnits: 300,
     quality: 'Grade B',
-    farmerId: 'farmer_01',
+    farmerId: '0x3EcF027EB869f93BB064352C5c9dF965C4bfe3e8',
     status: 'Request Pending',
     statusHistory: [
       { status: 'Request Pending', timestamp: format(new Date(Date.now() - 2 * 24 * 60 * 60 * 1000), 'PPpp') }
     ]
   },
-  {
-    id: 'prod_7g8h9i',
-    produceName: 'Sweet Corn',
-    numberOfUnits: 500,
-    quality: 'Grade A',
-    farmerId: 'farmer_02',
-    status: 'Processed',
-    statusHistory: [
-      { status: 'Sold', timestamp: format(new Date(Date.now() - 5 * 24 * 60 * 60 * 1000), 'PPpp') },
-      { status: 'Processed', timestamp: format(new Date(Date.now() - 3 * 24 * 60 * 60 * 1000), 'PPpp') }
-    ],
-    middlemanId: 'middleman_01',
-    blockchainTransactionHash: '0x' + Array(64).fill(0).map(() => Math.floor(Math.random() * 16).toString(16)).join(''),
-  },
 ];
 
 let produceData: Produce[] = [...initialProduce];
 
-// Simulate async Firestore calls
 const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
 
-// --- Mock Blockchain Service ---
-async function recordTransactionOnBlockchain(produce: Produce, middlemanId: string): Promise<string> {
-    await delay(750); // Simulate network latency for a blockchain transaction
-    console.log("Recording transaction to blockchain for produce:", produce.id);
-    console.log("Farmer:", mockUsers[produce.farmerId as keyof typeof mockUsers].name);
-    console.log("Middleman:", mockUsers[middlemanId as keyof typeof mockUsers].name);
-    console.log("Produce:", produce.produceName);
-    console.log("Quantity:", produce.numberOfUnits);
-    console.log("Quality:", produce.quality);
-    // Return a mock transaction hash
-    return '0x' + Array(64).fill(0).map(() => Math.floor(Math.random() * 16).toString(16)).join('');
+
+// --- Real Blockchain Service ---
+async function recordTransactionOnBlockchain(
+    produce: Produce, 
+    middlemanAddress: string
+): Promise<string> {
+    if (typeof window.ethereum === 'undefined') {
+        throw new Error('MetaMask is not installed. Please install it to continue.');
+    }
+    if (!contractAddress || contractAddress === 'YOUR_CONTRACT_ADDRESS_HERE') {
+        throw new Error('Contract address is not set. Please update it in src/lib/data.ts');
+    }
+
+    try {
+        // Connect to the user's wallet (MetaMask)
+        const provider = new BrowserProvider(window.ethereum);
+        const signer = await provider.getSigner();
+
+        // Ensure the signer is the correct middleman
+        if (signer.address.toLowerCase() !== middlemanAddress.toLowerCase()) {
+            throw new Error(`Incorrect wallet connected. Please connect with the middleman account: ${middlemanAddress}`);
+        }
+        
+        // Create a contract instance
+        const supplyChainContract = new Contract(contractAddress, contractABI, signer);
+
+        // Call the 'recordBatch' function on the smart contract
+        console.log("Sending transaction to blockchain...");
+        const tx = await supplyChainContract.recordBatch(
+            produce.farmerId,
+            produce.produceName,
+            produce.numberOfUnits,
+            produce.quality
+        );
+
+        // Wait for the transaction to be mined
+        console.log('Waiting for transaction to be mined...', tx.hash);
+        const receipt = await tx.wait();
+        console.log('Transaction mined!', receipt);
+
+        // Return the transaction hash
+        return receipt.hash;
+    } catch (error: any) {
+        console.error("Blockchain transaction failed:", error);
+        // Provide a more user-friendly error message
+        if (error.code === 'ACTION_REJECTED') {
+            throw new Error('Transaction was rejected in MetaMask.');
+        }
+        throw new Error(error.message || 'An unknown error occurred during the blockchain transaction.');
+    }
 }
 // -----------------------------
 
-
 export async function getProduceForFarmer(farmerId: string): Promise<Produce[]> {
   await delay(500);
-  return [...produceData].filter(p => p.farmerId === farmerId).sort((a, b) => new Date(b.statusHistory[0].timestamp).getTime() - new Date(a.statusHistory[0].timestamp).getTime());
+  return [...produceData].filter(p => p.farmerId.toLowerCase() === farmerId.toLowerCase()).sort((a, b) => new Date(b.statusHistory[0].timestamp).getTime() - new Date(a.statusHistory[0].timestamp).getTime());
 }
 
 export async function getPendingProduce(): Promise<Produce[]> {
@@ -125,13 +166,12 @@ export async function addProduce(
 export async function approveAndSellProduce(produceId: string, middlemanId: string): Promise<Produce | undefined> {
     const produceIndex = produceData.findIndex(p => p.id === produceId);
     if (produceIndex === -1) {
-        return undefined;
+        throw new Error("Produce not found.");
     }
 
     const produceToUpdate = produceData[produceIndex];
 
-    // This is where you would interact with your real blockchain.
-    // We are calling our mock service instead.
+    // Call the real blockchain service
     const txHash = await recordTransactionOnBlockchain(produceToUpdate, middlemanId);
 
     // Now update the local data with the new status and blockchain info

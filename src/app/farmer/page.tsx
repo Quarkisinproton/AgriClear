@@ -7,12 +7,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { addProduce, getProduceForFarmer, Produce } from "@/lib/data";
 import { useEffect, useState } from "react";
-import { useForm, SubmitHandler } from "react-hook-form";
+import { useForm, SubmitHandler, Controller } from "react-hook-form";
 import { useToast } from "@/hooks/use-toast";
 import { Carrot, PlusCircle, Loader2, Hourglass, CheckCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useAuth } from "@/lib/auth";
 
 type Inputs = {
   produceName: string;
@@ -21,6 +22,7 @@ type Inputs = {
 };
 
 export default function FarmerPage() {
+  const { user, role, userId } = useAuth();
   const [produceList, setProduceList] = useState<Produce[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
@@ -31,19 +33,24 @@ export default function FarmerPage() {
   });
 
   const fetchProduce = async () => {
+    if (!userId) return;
     setIsLoading(true);
-    const data = await getProduceForFarmer("farmer_01");
+    const data = await getProduceForFarmer(userId);
     setProduceList(data);
     setIsLoading(false);
   };
   
   useEffect(() => {
     fetchProduce();
-  }, []);
+  }, [userId]);
 
   const onSubmit: SubmitHandler<Inputs> = async (data) => {
+    if (!userId) {
+        toast({ title: "Error", description: "Farmer not identified.", variant: "destructive" });
+        return;
+    }
     try {
-      await addProduce(data.produceName, Number(data.numberOfUnits), data.quality, "farmer_01");
+      await addProduce(data.produceName, Number(data.numberOfUnits), data.quality, userId);
       toast({
         title: "Success",
         description: "New produce batch has been submitted for approval.",
