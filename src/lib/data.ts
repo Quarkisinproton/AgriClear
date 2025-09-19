@@ -207,9 +207,8 @@ const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
 
 // --- Real Blockchain Service ---
 async function recordTransactionOnBlockchain(
-    produce: Produce, 
-    middlemanAddress: string
-): Promise<string> {
+    produce: Produce
+): Promise<{ txHash: string, middlemanAddress: string }> {
     if (typeof window.ethereum === 'undefined') {
         throw new Error('MetaMask is not installed. Please install it to continue.');
     }
@@ -220,13 +219,10 @@ async function recordTransactionOnBlockchain(
     try {
         // Connect to the user's wallet (MetaMask)
         const provider = new BrowserProvider(window.ethereum);
-        await provider.send("eth_requestAccounts", []); // Request account access
+        
+        // This will prompt the user to connect their wallet if not already connected.
         const signer = await provider.getSigner();
-
-        // Ensure the signer is the correct middleman
-        if (signer.address.toLowerCase() !== middlemanAddress.toLowerCase()) {
-            throw new Error(`Incorrect wallet connected. Please connect with the middleman account: ${middlemanAddress}`);
-        }
+        const middlemanAddress = signer.address;
         
         // Create a contract instance
         const supplyChainContract = new Contract(contractAddress, contractABI, signer);
@@ -245,8 +241,8 @@ async function recordTransactionOnBlockchain(
         const receipt = await tx.wait();
         console.log('Transaction mined!', receipt);
 
-        // Return the transaction hash
-        return receipt.hash;
+        // Return the transaction hash and the address that signed it
+        return { txHash: receipt.hash, middlemanAddress };
     } catch (error: any) {
         console.error("Blockchain transaction failed:", error);
         // Provide a more user-friendly error message
@@ -301,7 +297,7 @@ export async function addProduce(
   return newProduce;
 }
 
-export async function approveAndSellProduce(produceId: string, middlemanId: string): Promise<Produce | undefined> {
+export async function approveAndSellProduce(produceId: string): Promise<Produce | undefined> {
     const produceIndex = produceData.findIndex(p => p.id === produceId);
     if (produceIndex === -1) {
         throw new Error("Produce not found.");
@@ -310,11 +306,11 @@ export async function approveAndSellProduce(produceId: string, middlemanId: stri
     const produceToUpdate = produceData[produceIndex];
 
     // Call the real blockchain service
-    const txHash = await recordTransactionOnBlockchain(produceToUpdate, middlemanId);
+    const { txHash, middlemanAddress } = await recordTransactionOnBlockchain(produceToUpdate);
 
     // Now update the local data with the new status and blockchain info
     produceToUpdate.status = 'Sold';
-    produceToUpdate.middlemanId = middlemanId;
+    produceToUpdate.middlemanId = middlemanAddress;
     produceToUpdate.blockchainTransactionHash = txHash;
     produceToUpdate.statusHistory.push({ status: 'Sold', timestamp: format(new Date(), 'PPpp') });
 

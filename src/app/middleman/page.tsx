@@ -51,13 +51,10 @@ export default function MiddlemanPage() {
   }, []);
   
   const handleApprove = async (produce: Produce) => {
-    if (!userId) {
-        toast({ title: "Error", description: "Middleman not identified.", variant: "destructive" });
-        return;
-    }
     setIsUpdating(produce.id);
     try {
-      const updatedProduce = await approveAndSellProduce(produce.id, userId);
+      // The middleman's address is now handled by the function based on the connected wallet
+      const updatedProduce = await approveAndSellProduce(produce.id);
       if (updatedProduce) {
         toast({
           title: "Approved & Recorded on Blockchain",
