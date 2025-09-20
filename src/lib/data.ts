@@ -172,6 +172,13 @@ export const mockUsers = {
     '0x33C22589a30a70852131e124e0AcA0f7b1A35824': { name: 'Fresh Produce Distributors', role: 'Middleman' },
 };
 
+/**
+ * --- DOUBT #3: Where does the consumer's data come from? ---
+ * In this prototype, the consumer's view gets data from this local `produceData` array.
+ * This is a mock database to simulate the full flow.
+ * A real-world application would need to be modified to fetch this data
+ * directly from the blockchain by calling a "view" function on your smart contract.
+ */
 const initialProduce: Produce[] = [
   {
     id: 'prod_1a2b3c',
@@ -220,14 +227,23 @@ async function recordTransactionOnBlockchain(
         // Connect to the user's wallet (MetaMask)
         const provider = new BrowserProvider(window.ethereum);
         
-        // This will prompt the user to connect their wallet if not already connected.
+        // This will prompt the user to connect their wallet and get the signer.
         const signer = await provider.getSigner();
         const middlemanAddress = signer.address;
         
         // Create a contract instance
         const supplyChainContract = new Contract(contractAddress, contractABI, signer);
 
-        // Call the 'recordBatch' function on the smart contract
+        /**
+         * --- DOUBT #1: What data does the app send to the blockchain? ---
+         * This is where the app sends data to the blockchain.
+         * It calls the `recordBatch` function on your smart contract with these parameters:
+         * 1. Farmer's wallet address (produce.farmerId)
+         * 2. Produce Name (produce.produceName)
+         * 3. Quantity (produce.numberOfUnits)
+         * 4. Quality (produce.quality)
+         * The smart contract itself adds the middleman's address and the timestamp.
+         */
         console.log("Sending transaction to blockchain...");
         const tx = await supplyChainContract.recordBatch(
             produce.farmerId,
@@ -277,6 +293,12 @@ export async function getProcessedProduce(): Promise<Produce[]> {
     return [...produceData].filter(p => p.status === 'Processed').sort((a, b) => new Date(a.statusHistory[a.statusHistory.length -1].timestamp).getTime() - new Date(b.statusHistory[b.statusHistory.length - 1].timestamp).getTime());
 }
 
+/**
+ * --- DOUBT #2: On what basis is the QR code generated? ---
+ * The QR code is generated based only on the `productId`. The consumer app scans
+ * this ID and then uses this `getProduceById` function to find the product's
+ * details in our mock `produceData` array.
+ */
 export async function getProduceById(id: string): Promise<Produce | undefined> {
   await delay(500);
   return produceData.find(p => p.id === id);
