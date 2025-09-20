@@ -4,155 +4,167 @@ import { ethers, BrowserProvider, Contract, ZeroAddress } from 'ethers';
 // --- Smart Contract Details ---
 const contractAddress = '0x1eB038c7C832BeF1BCe3850dB788b518c2cDbd0b';
 const contractABI: any[] = [
-	{
-		"anonymous": false,
-		"inputs": [
-			{
-				"indexed": true,
-				"internalType": "uint256",
-				"name": "batchId",
-				"type": "uint256"
-			},
-			{
-				"indexed": true,
-				"internalType": "address",
-				"name": "farmer",
-				"type": "address"
-			}
-		],
-		"name": "BatchCreated",
-		"type": "event"
-	},
-	{
-		"anonymous": false,
-		"inputs": [
-			{
-				"indexed": true,
-				"internalType": "uint256",
-				"name": "batchId",
-				"type": "uint256"
-			},
-			{
-				"indexed": true,
-				"internalType": "address",
-				"name": "middleman",
-				"type": "address"
-			}
-		],
-		"name": "BatchSold",
-		"type": "event"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "uint256",
-				"name": "_batchId",
-				"type": "uint256"
-			}
-		],
-		"name": "assignMiddleman",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "string",
-				"name": "_produceName",
-				"type": "string"
-			},
-			{
-				"internalType": "uint256",
-				"name": "_quantity",
-				"type": "uint256"
-			},
-			{
-				"internalType": "string",
-				"name": "_quality",
-				"type": "string"
-			}
-		],
-		"name": "createBatch",
-		"outputs": [],
-s		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			}
-		],
-		"name": "batches",
-		"outputs": [
-			{
-				"internalType": "uint256",
-				"name": "batchId",
-				"type": "uint256"
-			},
-			{
-				"internalType": "string",
-				"name": "produceName",
-				"type": "string"
-			},
-			{
-				"internalType": "uint256",
-				"name": "quantity",
-				"type": "uint256"
-			},
-			{
-				"internalType": "string",
-				"name": "quality",
-				"type": "string"
-			},
-			{
-				"internalType": "address",
-				"name": "farmer",
-				"type": "address"
-			},
-			{
-				"internalType": "address",
-				"name": "middleman",
-				"type": "address"
-			},
-			{
-				"internalType": "uint256",
-				"name": "timestamp",
-				"type": "uint256"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "getBatchCount",
-		"outputs": [
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "nextBatchId",
-		"outputs": [
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	}
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "uint256",
+          "name": "batchId",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "string",
+          "name": "produceName",
+          "type": "string"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "farmer",
+          "type": "address"
+        }
+      ],
+      "name": "BatchCreated",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "uint256",
+          "name": "batchId",
+          "type": "uint256"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "farmer",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "middleman",
+          "type": "address"
+        }
+      ],
+      "name": "BatchSold",
+      "type": "event"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "_batchId",
+          "type": "uint256"
+        }
+      ],
+      "name": "assignMiddleman",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "name": "batches",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "batchId",
+          "type": "uint256"
+        },
+        {
+          "internalType": "string",
+          "name": "produceName",
+          "type": "string"
+        },
+        {
+          "internalType": "uint256",
+          "name": "quantity",
+          "type": "uint256"
+        },
+        {
+          "internalType": "string",
+          "name": "quality",
+          "type": "string"
+        },
+        {
+          "internalType": "address",
+          "name": "farmer",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "middleman",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "timestamp",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "string",
+          "name": "_produceName",
+          "type": "string"
+        },
+        {
+          "internalType": "uint256",
+          "name": "_quantity",
+          "type": "uint256"
+        },
+        {
+          "internalType": "string",
+          "name": "_quality",
+          "type": "string"
+        }
+      ],
+      "name": "createBatch",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "getBatchCount",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "nextBatchId",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    }
 ];
 // ------------------------------------------
 
@@ -170,16 +182,16 @@ export interface Produce {
 
 // Keep mock names for display purposes, but data comes from blockchain
 export const mockUsers = {
-    '0x3EcF027EB869f93BB064352C5c9dF965C4bfe3e8': { name: 'Green Valley Farms', role: 'Farmer' },
-    '0x33C22589a30a70852131e124e0AcA0f7b1A35824': { name: 'Fresh Produce Distributors', role: 'Middleman' },
+    '0x3ecf027eb869f93bb064352c5c9df965c4bfe3e8': { name: 'Green Valley Farms', role: 'Farmer' },
+    '0x33c22589a30a70852131e124e0aca0f7b1a35824': { name: 'Fresh Produce Distributors', role: 'Middleman' },
 };
 
 
-const getContract = (signer = false) => {
+const getContract = async (signer = false) => {
     if (typeof window.ethereum === 'undefined') {
         throw new Error('MetaMask is not installed. Please install it to continue.');
     }
-    if (!contractAddress || contractAddress.startsWith('YOUR_CONTRACT')) {
+    if (!contractAddress || contractAddress.startsWith('YOUR_CONTRACT_ADDRESS_HERE')) {
         // Using a public contract for demo purposes if not set.
         // Replace with your deployed contract address.
         console.warn("Using a demo contract address. Please replace with your own in src/lib/data.ts");
@@ -188,7 +200,7 @@ const getContract = (signer = false) => {
 
     const provider = new BrowserProvider(window.ethereum);
     if (signer) {
-        return provider.getSigner().then(signer => new Contract(contractAddress, contractABI, signer));
+        return new Contract(contractAddress, contractABI, await provider.getSigner());
     } else {
         return new Contract(contractAddress, contractABI, provider);
     }
@@ -226,7 +238,10 @@ async function getAllBatches(): Promise<Produce[]> {
 
     for (let i = 0; i < batchCount; i++) {
         const batch = await contract.batches(i);
-        batches.push(formatBatch(batch));
+        // Only add batches that have a valid farmer (i.e., not the zero address)
+        if (batch.farmer !== ZeroAddress) {
+            batches.push(formatBatch(batch));
+        }
     }
     return batches.sort((a,b) => b.id - a.id); // Sort by most recent
 }
@@ -265,17 +280,12 @@ export async function getProduceById(id: number): Promise<Produce | undefined> {
 export async function addProduce(
   produceName: string,
   numberOfUnits: number,
-  quality: Produce['quality'],
-  farmerId: string
+  quality: Produce['quality']
 ): Promise<void> {
     const contract = await getContract(true);
-     if (!contract) throw new Error("Contract not available");
+    if (!contract) throw new Error("Contract not available");
 
     try {
-        const signer = await (contract.runner as any)?.getAddress();
-        if(signer.toLowerCase() !== farmerId.toLowerCase()){
-            throw new Error(`Incorrect wallet connected. Please connect with the farmer account: ${farmerId}`);
-        }
         console.log("Sending transaction to create batch...");
         const tx = await contract.createBatch(produceName, numberOfUnits, quality);
         await tx.wait(); // Wait for transaction to be mined
