@@ -1,5 +1,5 @@
 import { format } from 'date-fns';
-import { ethers, BrowserProvider, Contract, ZeroAddress, getAddress } from 'ethers';
+import { ethers, BrowserProvider, Contract, ZeroAddress } from 'ethers';
 
 // --- Smart Contract Details ---
 const contractAddress = '0x1eB038c7C832BeF1BCe3850dB788b518c2cDbd0b';
@@ -248,7 +248,7 @@ async function getAllBatches(): Promise<Produce[]> {
 
 export async function getProduceForFarmer(farmerId: string): Promise<Produce[]> {
   const allBatches = await getAllBatches();
-  return allBatches.filter(p => getAddress(p.farmerId) === getAddress(farmerId));
+  return allBatches.filter(p => p.farmerId.toLowerCase() === farmerId.toLowerCase());
 }
 
 export async function getAvailableProduce(): Promise<Produce[]> {
@@ -258,7 +258,7 @@ export async function getAvailableProduce(): Promise<Produce[]> {
 
 export async function getSoldProduceForMiddleman(middlemanId: string): Promise<Produce[]> {
     const allBatches = await getAllBatches();
-    return allBatches.filter(p => p.middlemanId !== ZeroAddress && getAddress(p.middlemanId) === getAddress(middlemanId));
+    return allBatches.filter(p => p.middlemanId !== ZeroAddress && p.middlemanId.toLowerCase() === middlemanId.toLowerCase());
 }
 
 export async function getProduceById(id: number): Promise<Produce | undefined> {
@@ -278,6 +278,7 @@ export async function getProduceById(id: number): Promise<Produce | undefined> {
 }
 
 export async function addProduce(
+  farmerId: string,
   produceName: string,
   numberOfUnits: number,
   quality: Produce['quality']
@@ -286,8 +287,12 @@ export async function addProduce(
     if (!contract) throw new Error("Contract not available");
 
     try {
+        const signer = await (contract.runner as any)?.getAddress();
+        if(signer.toLowerCase() !== farmerId.toLowerCase()){
+            throw new Error(`Incorrect wallet connected. Please connect with the farmer account: ${farmerId}`);
+        }
         console.log("Sending transaction to create batch...");
-        const tx = await contract.createBatch(produceName, numberOfUnits, quality.trim());
+        const tx = await contract.createBatch(produceName, numberOfUnits, quality);
         await tx.wait(); // Wait for transaction to be mined
         console.log("Transaction mined!", tx.hash);
     } catch (error: any) {
@@ -306,7 +311,7 @@ export async function assignMiddlemanToBatch(batchId: number, middlemanId: strin
 
     try {
         const signer = await (contract.runner as any)?.getAddress();
-        if(getAddress(signer) !== getAddress(middlemanId)){
+        if(signer.toLowerCase() !== middlemanId.toLowerCase()){
             throw new Error(`Incorrect wallet connected. Please connect with the middleman account: ${middlemanId}`);
         }
         console.log(`Sending transaction to assign middleman to batch ${batchId}...`);

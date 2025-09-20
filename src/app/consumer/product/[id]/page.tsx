@@ -10,7 +10,6 @@ import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { getAddress } from "ethers";
 
 type MockUserKeys = keyof typeof mockUsers;
 
@@ -64,22 +63,12 @@ export default function ProductDetailsPage() {
   );
 
   const getFarmerName = (id: string) => {
-    try {
-      const normalizedId = getAddress(id);
-      return mockUsers[normalizedId as MockUserKeys]?.name || 'Unknown Farmer';
-    } catch {
-      return 'Unknown Farmer';
-    }
+    return mockUsers[id as MockUserKeys]?.name || 'Unknown Farmer';
   }
   
   const getMiddlemanName = (id?: string) => {
     if (!id || id === '0x0000000000000000000000000000000000000000') return 'N/A';
-    try {
-      const normalizedId = getAddress(id);
-      return mockUsers[normalizedId as MockUserKeys]?.name || 'Unknown Distributor';
-    } catch {
-       return 'Unknown Distributor';
-    }
+    return mockUsers[id as MockUserKeys]?.name || 'Unknown Distributor';
   }
 
   return (
