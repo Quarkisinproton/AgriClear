@@ -4,10 +4,10 @@ import AppLayout from "@/components/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { getSoldProduce, getPendingProduce, Produce, updateProduceStatus, approveAndSellProduce, getProcessedProduce } from "@/lib/data";
+import { getAvailableProduce, getSoldProduceForMiddleman, Produce, assignMiddlemanToBatch } from "@/lib/data";
 import { useEffect, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { QrCode, Loader2, Truck, Package, Check, SendToBack, ShieldCheck } from "lucide-react";
+import { QrCode, Loader2, Truck, Package, Check, SendToBack, ShieldCheck, ShoppingCart } from "lucide-react";
 import Image from 'next/image';
 import { generateQrCode } from '@/ai/flows/middleman-qr-code-generation';
 import { Skeleton } from "@/components/ui/skeleton";
@@ -16,53 +16,56 @@ import { useAuth } from "@/lib/auth";
 
 export default function MiddlemanPage() {
   const { userId } = useAuth();
-  const [pendingList, setPendingList] = useState<Produce[]>([]);
-  const [soldList, setSoldList] = useState<Produce[]>([]);
-  const [processedList, setProcessedList] = useState<Produce[]>([]);
+  const [availableList, setAvailableList] = useState<Produce[]>([]);
+  const [mySoldList, setMySoldList] = useState<Produce[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isUpdating, setIsUpdating] = useState<string | null>(null);
-  const [isGeneratingQr, setIsGeneratingQr] = useState<string | null>(null);
+  const [isUpdating, setIsUpdating] = useState<number | null>(null);
+  const [isGeneratingQr, setIsGeneratingQr] = useState<number | null>(null);
   const [qrCodeData, setQrCodeData] = useState<string | null>(null);
 
   const { toast } = useToast();
 
   const fetchProduce = async () => {
+    if (!userId) return;
     setIsLoading(true);
     try {
-        const pendingData = await getPendingProduce();
-        const soldData = await getSoldProduce();
-        const processedData = await getProcessedProduce();
-
-        setPendingList(pendingData);
-        setSoldList(soldData);
-        setProcessedList(processedData);
-    } catch (error) {
+        const availableData = await getAvailableProduce();
+        const soldData = await getSoldProduceForMiddleman(userId);
+        
+        setAvailableList(availableData);
+        setMySoldList(soldData);
+    } catch (error: any) {
         console.error(error);
-        toast({ title: "Error", description: "Failed to fetch produce data.", variant: "destructive" });
+        toast({ title: "Error", description: error.message || "Failed to fetch produce data from the blockchain.", variant: "destructive" });
     } finally {
         setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchProduce();
-  }, []);
+    if (userId) {
+        fetchProduce();
+    }
+  }, [userId]);
   
-  const handleApprove = async (produce: Produce) => {
+  const handlePurchase = async (produce: Produce) => {
+    if (!userId) {
+        toast({ title: "Error", description: "Your wallet is not connected.", variant: "destructive" });
+        return;
+    }
     setIsUpdating(produce.id);
     try {
-      // The middleman's address is now handled by the function based on the connected wallet
-      const updatedProduce = await approveAndSellProduce(produce.id);
+      const updatedProduce = await assignMiddlemanToBatch(produce.id, userId);
       if (updatedProduce) {
         toast({
-          title: "Approved & Recorded on Blockchain",
-          description: `Batch ${produce.produceName} has been marked as sold.`,
+          title: "Batch Purchased",
+          description: `You are now the middleman for batch ${produce.produceName}.`,
         });
         await fetchProduce();
       }
     } catch (error: any) {
       toast({
-        title: "Error Approving Batch",
+        title: "Error Purchasing Batch",
         description: error.message || "An unknown error occurred.",
         variant: "destructive",
       });
@@ -71,34 +74,12 @@ export default function MiddlemanPage() {
       setIsUpdating(null);
     }
   };
-  
-  const handleProcess = async (produce: Produce) => {
-    setIsUpdating(produce.id);
-    try {
-      const updatedProduce = await updateProduceStatus(produce.id, 'Processed');
-      if (updatedProduce) {
-        toast({
-          title: "Success",
-          description: `Batch ${produce.produceName} has been processed.`,
-        });
-        await fetchProduce();
-      }
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to process batch.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsUpdating(null);
-    }
-  };
 
-  const handleGenerateQr = async (productId: string) => {
+  const handleGenerateQr = async (productId: number) => {
     setIsGeneratingQr(productId);
     setQrCodeData(null);
     try {
-      const result: GenerateQrCodeOutput = await generateQrCode({ productId });
+      const result: GenerateQrCodeOutput = await generateQrCode({ productId: productId.toString() });
       setQrCodeData(result.qrCodeDataUri);
     } catch(e) {
       console.error(e);
@@ -120,23 +101,23 @@ export default function MiddlemanPage() {
 
   return (
     <AppLayout expectedRole="Middleman">
-      <div className="grid gap-8 xl:grid-cols-3 lg:items-start">
-        <Card className="xl:col-span-1">
+      <div className="grid gap-8 lg:grid-cols-2 lg:items-start">
+        <Card className="lg:col-span-1">
           <CardHeader>
-            <CardTitle>Pending Approval</CardTitle>
-            <CardDescription>Approve batches to sell and record on the blockchain.</CardDescription>
+            <CardTitle>Available for Purchase</CardTitle>
+            <CardDescription>These batches are available on the network to be purchased and distributed.</CardDescription>
           </CardHeader>
           <CardContent>
-            {isLoading ? <ListSkeleton /> : pendingList.length > 0 ? (
+            {isLoading ? <ListSkeleton /> : availableList.length > 0 ? (
               <ul className="space-y-4">
-                {pendingList.map((produce) => (
+                {availableList.map((produce) => (
                   <li key={produce.id} className="p-4 border rounded-lg flex justify-between items-center bg-card">
                     <div>
                       <p className="font-semibold">{produce.produceName}</p>
                       <p className="text-sm text-muted-foreground">Units: {produce.numberOfUnits} | Quality: {produce.quality}</p>
                     </div>
-                    <Button onClick={() => handleApprove(produce)} disabled={isUpdating === produce.id} variant="secondary">
-                      {isUpdating === produce.id ? <Loader2 className="animate-spin mr-2" /> : <ShieldCheck className="mr-2" />} Approve
+                    <Button onClick={() => handlePurchase(produce)} disabled={isUpdating === produce.id} variant="secondary">
+                      {isUpdating === produce.id ? <Loader2 className="animate-spin mr-2" /> : <ShoppingCart className="mr-2" />} Purchase
                     </Button>
                   </li>
                 ))}
@@ -144,54 +125,28 @@ export default function MiddlemanPage() {
             ) : (
                 <div className="text-center py-8 text-muted-foreground">
                     <SendToBack className="mx-auto h-12 w-12" />
-                    <p className="mt-4">No pending approvals.</p>
+                    <p className="mt-4">No batches available for purchase.</p>
                 </div>
             )}
           </CardContent>
         </Card>
 
-        <Card className="xl:col-span-1">
-          <CardHeader>
-            <CardTitle>Sold & Ready to Process</CardTitle>
-            <CardDescription>These approved batches are ready to be processed for shipping.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {isLoading ? <ListSkeleton /> : soldList.length > 0 ? (
-              <ul className="space-y-4">
-                {soldList.map((produce) => (
-                  <li key={produce.id} className="p-4 border rounded-lg flex justify-between items-center bg-card">
-                    <div>
-                      <p className="font-semibold">{produce.produceName}</p>
-                      <p className="text-sm text-muted-foreground">Units: {produce.numberOfUnits} | ID: {produce.id}</p>
-                    </div>
-                    <Button onClick={() => handleProcess(produce)} disabled={isUpdating === produce.id} className="bg-accent hover:bg-accent/90 text-accent-foreground">
-                      {isUpdating === produce.id ? <Loader2 className="animate-spin mr-2" /> : <Truck className="mr-2" />} Process
-                    </Button>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="text-muted-foreground text-center py-8">No sold produce available to process.</p>
-            )}
-          </CardContent>
-        </Card>
-        
-        <Card className="xl:col-span-1">
+        <Card className="lg:col-span-1">
             <CardHeader>
-              <CardTitle>Processed & Ready for QR</CardTitle>
-              <CardDescription>Generate QR codes for these processed batches.</CardDescription>
+              <CardTitle>Your Purchased Batches</CardTitle>
+              <CardDescription>Generate QR codes for batches you have purchased.</CardDescription>
             </CardHeader>
             <CardContent>
-              {isLoading ? <ListSkeleton /> : processedList.length > 0 ? (
+              {isLoading ? <ListSkeleton /> : mySoldList.length > 0 ? (
                 <ul className="space-y-4">
-                  {processedList.map((produce) => (
+                  {mySoldList.map((produce) => (
                     <li key={produce.id} className="p-4 border rounded-lg flex justify-between items-center bg-card">
                       <div>
                         <p className="font-semibold">{produce.produceName}</p>
-                        <p className="text-sm text-muted-foreground">Units: {produce.numberOfUnits} | ID: {produce.id}</p>
+                        <p className="text-sm text-muted-foreground">Units: {produce.numberOfUnits} | ID: {produce.id.toString()}</p>
                       </div>
 
-                      <Dialog>
+                      <Dialog onOpenChange={(open) => !open && setQrCodeData(null)}>
                         <DialogTrigger asChild>
                           <Button onClick={() => handleGenerateQr(produce.id)} disabled={isGeneratingQr === produce.id}>
                             {isGeneratingQr === produce.id ? <Loader2 className="animate-spin mr-2" /> : <QrCode className="mr-2" />} Generate QR
@@ -200,11 +155,14 @@ export default function MiddlemanPage() {
                         <DialogContent>
                           <DialogHeader>
                             <DialogTitle>QR Code for {produce.produceName}</DialogTitle>
-                            <DialogDescription>Product ID: {produce.id}</DialogDescription>
+                            <DialogDescription>Product ID: {produce.id.toString()}</DialogDescription>
                           </DialogHeader>
                           <div className="flex flex-col items-center justify-center p-4">
                             {qrCodeData ? (
-                                <Image src={qrCodeData} alt={`QR Code for ${produce.id}`} width={256} height={256} className="rounded-lg shadow-lg"/>
+                                <>
+                                    <Image src={qrCodeData} alt={`QR Code for ${produce.id}`} width={256} height={256} className="rounded-lg shadow-lg"/>
+                                    <p className="mt-4 text-sm text-muted-foreground">Scan this to see product details.</p>
+                                </>
                             ) : (
                               <div className="flex items-center gap-2 h-[256px]">
                                 <Loader2 className="animate-spin" />
@@ -220,7 +178,7 @@ export default function MiddlemanPage() {
               ) : (
                 <div className="text-center py-8 text-muted-foreground">
                     <Package className="mx-auto h-12 w-12" />
-                    <p className="mt-4">Processed batches will appear here.</p>
+                    <p className="mt-4">Batches you purchase will appear here.</p>
                 </div>
               )}
             </CardContent>

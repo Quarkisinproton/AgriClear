@@ -1,307 +1,265 @@
 import { format } from 'date-fns';
-import { ethers, BrowserProvider, Contract } from 'ethers';
+import { ethers, BrowserProvider, Contract, ZeroAddress } from 'ethers';
 
-// --- IMPORTANT: Smart Contract Details ---
-// You must deploy your contract and paste the address and ABI here.
+// --- Smart Contract Details ---
 const contractAddress = '0x1eB038c7C832BeF1BCe3850dB788b518c2cDbd0b';
 const contractABI: any[] = [
-  // This is the Application Binary Interface (ABI) of your contract.
-  // You can get this from Remix after you compile your contract.
-  // It's a JSON array that describes how to interact with your contract.
-  // Example:
-  // {
-  //   "inputs": [],
-  //   "name": "getBatchCount",
-  //   "outputs": [ { "internalType": "uint256", "name": "", "type": "uint256" } ],
-  //   "stateMutability": "view",
-  //   "type": "function"
-  // },
-  // ... Paste the full ABI array here
-    {
-      "anonymous": false,
-      "inputs": [
-        {
-          "indexed": true,
-          "internalType": "uint256",
-          "name": "batchId",
-          "type": "uint256"
-        },
-        {
-          "indexed": false,
-          "internalType": "string",
-          "name": "produceName",
-          "type": "string"
-        },
-        {
-          "indexed": true,
-          "internalType": "address",
-          "name": "farmer",
-          "type": "address"
-        },
-        {
-          "indexed": true,
-          "internalType": "address",
-          "name": "middleman",
-          "type": "address"
-        }
-      ],
-      "name": "BatchRecorded",
-      "type": "event"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "address",
-          "name": "_farmerAddress",
-          "type": "address"
-        },
-        {
-          "internalType": "string",
-          "name": "_produceName",
-          "type": "string"
-        },
-        {
-          "internalType": "uint256",
-          "name": "_quantity",
-          "type": "uint256"
-        },
-        {
-          "internalType": "string",
-          "name": "_quality",
-          "type": "string"
-        }
-      ],
-      "name": "recordBatch",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "uint256",
-          "name": "",
-          "type": "uint256"
-        }
-      ],
-      "name": "batches",
-      "outputs": [
-        {
-          "internalType": "uint256",
-          "name": "batchId",
-          "type": "uint256"
-        },
-        {
-          "internalType": "string",
-          "name": "produceName",
-          "type": "string"
-        },
-        {
-          "internalType": "uint256",
-          "name": "quantity",
-          "type": "uint256"
-        },
-        {
-          "internalType": "string",
-          "name": "quality",
-          "type": "string"
-        },
-        {
-          "internalType": "address",
-          "name": "farmer",
-          "type": "address"
-        },
-        {
-          "internalType": "address",
-          "name": "middleman",
-          "type": "address"
-        },
-        {
-          "internalType": "uint256",
-          "name": "timestamp",
-          "type": "uint256"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [],
-      "name": "getBatchCount",
-      "outputs": [
-        {
-          "internalType": "uint256",
-          "name": "",
-          "type": "uint256"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [],
-      "name": "nextBatchId",
-      "outputs": [
-        {
-          "internalType": "uint256",
-          "name": "",
-          "type": "uint256"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    }
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": true,
+				"internalType": "uint256",
+				"name": "batchId",
+				"type": "uint256"
+			},
+			{
+				"indexed": true,
+				"internalType": "address",
+				"name": "farmer",
+				"type": "address"
+			}
+		],
+		"name": "BatchCreated",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": true,
+				"internalType": "uint256",
+				"name": "batchId",
+				"type": "uint256"
+			},
+			{
+				"indexed": true,
+				"internalType": "address",
+				"name": "middleman",
+				"type": "address"
+			}
+		],
+		"name": "BatchSold",
+		"type": "event"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "_batchId",
+				"type": "uint256"
+			}
+		],
+		"name": "assignMiddleman",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "string",
+				"name": "_produceName",
+				"type": "string"
+			},
+			{
+				"internalType": "uint256",
+				"name": "_quantity",
+				"type": "uint256"
+			},
+			{
+				"internalType": "string",
+				"name": "_quality",
+				"type": "string"
+			}
+		],
+		"name": "createBatch",
+		"outputs": [],
+s		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"name": "batches",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "batchId",
+				"type": "uint256"
+			},
+			{
+				"internalType": "string",
+				"name": "produceName",
+				"type": "string"
+			},
+			{
+				"internalType": "uint256",
+				"name": "quantity",
+				"type": "uint256"
+			},
+			{
+				"internalType": "string",
+				"name": "quality",
+				"type": "string"
+			},
+			{
+				"internalType": "address",
+				"name": "farmer",
+				"type": "address"
+			},
+			{
+				"internalType": "address",
+				"name": "middleman",
+				"type": "address"
+			},
+			{
+				"internalType": "uint256",
+				"name": "timestamp",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "getBatchCount",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "nextBatchId",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	}
 ];
 // ------------------------------------------
 
 export interface Produce {
-  id: string;
+  id: number;
   produceName: string;
   numberOfUnits: number;
   quality: 'Grade A' | 'Grade B' | 'Grade C';
-  farmerId: string; // This will be the farmer's wallet address
-  middlemanId?: string; // This will be the middleman's wallet address
-  blockchainTransactionHash?: string;
-  status: 'Request Pending' | 'Sold' | 'Processed';
+  farmerId: string;
+  middlemanId: string;
+  timestamp: string;
+  status: 'Created' | 'Sold';
   statusHistory: { status: string; timestamp: string }[];
 }
 
-// Mock user data with real wallet addresses
+// Keep mock names for display purposes, but data comes from blockchain
 export const mockUsers = {
     '0x3EcF027EB869f93BB064352C5c9dF965C4bfe3e8': { name: 'Green Valley Farms', role: 'Farmer' },
     '0x33C22589a30a70852131e124e0AcA0f7b1A35824': { name: 'Fresh Produce Distributors', role: 'Middleman' },
 };
 
-/**
- * --- DOUBT #3: Where does the consumer's data come from? ---
- * In this prototype, the consumer's view gets data from this local `produceData` array.
- * This is a mock database to simulate the full flow.
- * A real-world application would need to be modified to fetch this data
- * directly from the blockchain by calling a "view" function on your smart contract.
- */
-const initialProduce: Produce[] = [
-  {
-    id: 'prod_1a2b3c',
-    produceName: 'Organic Tomatoes',
-    numberOfUnits: 150,
-    quality: 'Grade A',
-    farmerId: '0x3EcF027EB869f93BB064352C5c9dF965C4bfe3e8',
-    status: 'Sold',
-    statusHistory: [
-      { status: 'Request Pending', timestamp: format(new Date(Date.now() - 3 * 24 * 60 * 60 * 1000), 'PPpp') },
-      { status: 'Sold', timestamp: format(new Date(), 'PPpp') }
-    ],
-    middlemanId: '0x33C22589a30a70852131e124e0AcA0f7b1A35824',
-    blockchainTransactionHash: '0x' + Array(64).fill(0).map(() => Math.floor(Math.random() * 16).toString(16)).join(''),
-  },
-  {
-    id: 'prod_4d5e6f',
-    produceName: 'Crisp Lettuce',
-    numberOfUnits: 300,
-    quality: 'Grade B',
-    farmerId: '0x3EcF027EB869f93BB064352C5c9dF965C4bfe3e8',
-    status: 'Request Pending',
-    statusHistory: [
-      { status: 'Request Pending', timestamp: format(new Date(Date.now() - 2 * 24 * 60 * 60 * 1000), 'PPpp') }
-    ]
-  },
-];
 
-let produceData: Produce[] = [...initialProduce];
-
-const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
-
-
-// --- Real Blockchain Service ---
-async function recordTransactionOnBlockchain(
-    produce: Produce
-): Promise<{ txHash: string, middlemanAddress: string }> {
+const getContract = (signer = false) => {
     if (typeof window.ethereum === 'undefined') {
         throw new Error('MetaMask is not installed. Please install it to continue.');
     }
-    if (!contractAddress || contractAddress === 'YOUR_CONTRACT_ADDRESS_HERE') {
-        throw new Error('Contract address is not set. Please update it in src/lib/data.ts');
+    if (!contractAddress || contractAddress.startsWith('YOUR_CONTRACT')) {
+        // Using a public contract for demo purposes if not set.
+        // Replace with your deployed contract address.
+        console.warn("Using a demo contract address. Please replace with your own in src/lib/data.ts");
+        return null;
     }
 
-    try {
-        // Connect to the user's wallet (MetaMask)
-        const provider = new BrowserProvider(window.ethereum);
-        
-        // This will prompt the user to connect their wallet and get the signer.
-        const signer = await provider.getSigner();
-        const middlemanAddress = signer.address;
-        
-        // Create a contract instance
-        const supplyChainContract = new Contract(contractAddress, contractABI, signer);
-
-        /**
-         * --- DOUBT #1: What data does the app send to the blockchain? ---
-         * This is where the app sends data to the blockchain.
-         * It calls the `recordBatch` function on your smart contract with these parameters:
-         * 1. Farmer's wallet address (produce.farmerId)
-         * 2. Produce Name (produce.produceName)
-         * 3. Quantity (produce.numberOfUnits)
-         * 4. Quality (produce.quality)
-         * The smart contract itself adds the middleman's address and the timestamp.
-         */
-        console.log("Sending transaction to blockchain...");
-        const tx = await supplyChainContract.recordBatch(
-            produce.farmerId,
-            produce.produceName,
-            produce.numberOfUnits,
-            produce.quality
-        );
-
-        // Wait for the transaction to be mined
-        console.log('Waiting for transaction to be mined...', tx.hash);
-        const receipt = await tx.wait();
-        console.log('Transaction mined!', receipt);
-
-        // Return the transaction hash and the address that signed it
-        return { txHash: receipt.hash, middlemanAddress };
-    } catch (error: any) {
-        console.error("Blockchain transaction failed:", error);
-        // Provide a more user-friendly error message
-        if (error.code === 'ACTION_REJECTED') {
-            throw new Error('Transaction was rejected in MetaMask.');
-        }
-        if (error.message.includes('Incorrect wallet connected')) {
-             throw new Error(error.message); // Re-throw the specific error for the UI to catch
-        }
-        throw new Error('An unknown error occurred during the blockchain transaction.');
+    const provider = new BrowserProvider(window.ethereum);
+    if (signer) {
+        return provider.getSigner().then(signer => new Contract(contractAddress, contractABI, signer));
+    } else {
+        return new Contract(contractAddress, contractABI, provider);
     }
+};
+
+const formatBatch = (batch: any): Produce => {
+    const status: Produce['status'] = batch.middleman === ZeroAddress ? 'Created' : 'Sold';
+    const timestamp = format(new Date(Number(batch.timestamp) * 1000), 'PPpp');
+
+    const statusHistory = [{ status: 'Created', timestamp }];
+    if (status === 'Sold') {
+        // We don't have the sold timestamp, so we'll reuse the creation one for now.
+        statusHistory.push({ status: 'Sold', timestamp });
+    }
+
+    return {
+        id: Number(batch.batchId),
+        produceName: batch.produceName,
+        numberOfUnits: Number(batch.quantity),
+        quality: batch.quality as Produce['quality'],
+        farmerId: batch.farmer,
+        middlemanId: batch.middleman,
+        timestamp,
+        status,
+        statusHistory,
+    };
+};
+
+async function getAllBatches(): Promise<Produce[]> {
+    const contract = await getContract();
+    if (!contract) return [];
+
+    const batchCount = await contract.getBatchCount();
+    const batches: Produce[] = [];
+
+    for (let i = 0; i < batchCount; i++) {
+        const batch = await contract.batches(i);
+        batches.push(formatBatch(batch));
+    }
+    return batches.sort((a,b) => b.id - a.id); // Sort by most recent
 }
-// -----------------------------
 
 export async function getProduceForFarmer(farmerId: string): Promise<Produce[]> {
-  await delay(500);
-  return [...produceData].filter(p => p.farmerId.toLowerCase() === farmerId.toLowerCase()).sort((a, b) => new Date(b.statusHistory[0].timestamp).getTime() - new Date(a.statusHistory[0].timestamp).getTime());
+  const allBatches = await getAllBatches();
+  return allBatches.filter(p => p.farmerId.toLowerCase() === farmerId.toLowerCase());
 }
 
-export async function getPendingProduce(): Promise<Produce[]> {
-  await delay(500);
-  return [...produceData].filter(p => p.status === 'Request Pending').sort((a, b) => new Date(a.statusHistory[0].timestamp).getTime() - new Date(b.statusHistory[0].timestamp).getTime());
+export async function getAvailableProduce(): Promise<Produce[]> {
+  const allBatches = await getAllBatches();
+  return allBatches.filter(p => p.status === 'Created');
 }
 
-export async function getSoldProduce(): Promise<Produce[]> {
-  await delay(500);
-  return [...produceData].filter(p => p.status === 'Sold').sort((a, b) => new Date(a.statusHistory[0].timestamp).getTime() - new Date(b.statusHistory[0].timestamp).getTime());
+export async function getSoldProduceForMiddleman(middlemanId: string): Promise<Produce[]> {
+    const allBatches = await getAllBatches();
+    return allBatches.filter(p => p.middlemanId.toLowerCase() === middlemanId.toLowerCase());
 }
 
-export async function getProcessedProduce(): Promise<Produce[]> {
-    await delay(500);
-    return [...produceData].filter(p => p.status === 'Processed').sort((a, b) => new Date(a.statusHistory[a.statusHistory.length -1].timestamp).getTime() - new Date(b.statusHistory[b.statusHistory.length - 1].timestamp).getTime());
-}
-
-/**
- * --- DOUBT #2: On what basis is the QR code generated? ---
- * The QR code is generated based only on the `productId`. The consumer app scans
- * this ID and then uses this `getProduceById` function to find the product's
- * details in our mock `produceData` array.
- */
-export async function getProduceById(id: string): Promise<Produce | undefined> {
-  await delay(500);
-  return produceData.find(p => p.id === id);
+export async function getProduceById(id: number): Promise<Produce | undefined> {
+  const contract = await getContract();
+  if (!contract) return undefined;
+  try {
+      const batch = await contract.batches(id);
+      // If the farmer address is the zero address, it means the batch doesn't exist.
+      if (batch.farmer === ZeroAddress) {
+          return undefined;
+      }
+      return formatBatch(batch);
+  } catch (error) {
+      console.error("Error fetching produce by ID:", error);
+      return undefined;
+  }
 }
 
 export async function addProduce(
@@ -309,53 +267,52 @@ export async function addProduce(
   numberOfUnits: number,
   quality: Produce['quality'],
   farmerId: string
-): Promise<Produce> {
-  await delay(500);
-  const newProduce: Produce = {
-    id: `prod_${Math.random().toString(36).substring(2, 9)}`,
-    produceName,
-    numberOfUnits,
-    quality,
-    farmerId,
-    status: 'Request Pending',
-    statusHistory: [{ status: 'Request Pending', timestamp: format(new Date(), 'PPpp') }],
-  };
-  produceData.unshift(newProduce);
-  return newProduce;
-}
+): Promise<void> {
+    const contract = await getContract(true);
+     if (!contract) throw new Error("Contract not available");
 
-export async function approveAndSellProduce(produceId: string): Promise<Produce | undefined> {
-    const produceIndex = produceData.findIndex(p => p.id === produceId);
-    if (produceIndex === -1) {
-        throw new Error("Produce not found.");
+    try {
+        const signer = await (contract.runner as any)?.getAddress();
+        if(signer.toLowerCase() !== farmerId.toLowerCase()){
+            throw new Error(`Incorrect wallet connected. Please connect with the farmer account: ${farmerId}`);
+        }
+        console.log("Sending transaction to create batch...");
+        const tx = await contract.createBatch(produceName, numberOfUnits, quality);
+        await tx.wait(); // Wait for transaction to be mined
+        console.log("Transaction mined!", tx.hash);
+    } catch (error: any) {
+        console.error("Blockchain transaction failed:", error);
+        if (error.code === 'ACTION_REJECTED') {
+            throw new Error('Transaction was rejected in MetaMask.');
+        }
+        throw new Error(error.message || 'An unknown error occurred during the blockchain transaction.');
     }
-
-    let produceToUpdate = produceData[produceIndex];
-
-    // Call the real blockchain service
-    const { txHash, middlemanAddress } = await recordTransactionOnBlockchain(produceToUpdate);
-
-    // Now update the local data with the new status and blockchain info
-    produceToUpdate = {
-        ...produceToUpdate,
-        status: 'Sold',
-        middlemanId: middlemanAddress,
-        blockchainTransactionHash: txHash,
-        statusHistory: [...produceToUpdate.statusHistory, { status: 'Sold', timestamp: format(new Date(), 'PPpp') }]
-    };
-    
-    produceData[produceIndex] = produceToUpdate;
-    return produceToUpdate;
 }
 
 
-export async function updateProduceStatus(id: string, status: 'Processed'): Promise<Produce | undefined> {
-  await delay(500);
-  const produceIndex = produceData.findIndex(p => p.id === id);
-  if (produceIndex > -1) {
-    produceData[produceIndex].status = status;
-    produceData[produceIndex].statusHistory.push({ status, timestamp: format(new Date(), 'PPpp') });
-    return produceData[produceIndex];
-  }
-  return undefined;
+export async function assignMiddlemanToBatch(batchId: number, middlemanId: string): Promise<Produce> {
+    const contract = await getContract(true);
+    if (!contract) throw new Error("Contract not available");
+
+    try {
+        const signer = await (contract.runner as any)?.getAddress();
+        if(signer.toLowerCase() !== middlemanId.toLowerCase()){
+            throw new Error(`Incorrect wallet connected. Please connect with the middleman account: ${middlemanId}`);
+        }
+        console.log(`Sending transaction to assign middleman to batch ${batchId}...`);
+        const tx = await contract.assignMiddleman(batchId);
+        await tx.wait();
+        console.log("Transaction mined!", tx.hash);
+
+        const updatedBatch = await getProduceById(batchId);
+        if (!updatedBatch) throw new Error("Failed to fetch updated batch data.");
+
+        return updatedBatch;
+    } catch (error: any) {
+        console.error("Blockchain transaction failed:", error);
+        if (error.code === 'ACTION_REJECTED') {
+            throw new Error('Transaction was rejected in MetaMask.');
+        }
+        throw new Error(error.message || 'An unknown error occurred during the blockchain transaction.');
+    }
 }
