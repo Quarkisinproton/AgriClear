@@ -52,8 +52,12 @@ export default function FarmerPage() {
   }, [userId]);
 
   const onSubmit: SubmitHandler<Inputs> = async (data) => {
+    if (!userId) {
+        toast({ title: "Error", description: "User ID not found. Cannot create batch.", variant: "destructive" });
+        return;
+    }
     try {
-      await addProduce(data.produceName, Number(data.numberOfUnits), data.quality);
+      await addProduce(userId, data.produceName, Number(data.numberOfUnits), data.quality);
       toast({
         title: "Success",
         description: "New produce batch has been recorded on the blockchain.",
