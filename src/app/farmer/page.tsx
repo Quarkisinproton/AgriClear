@@ -52,10 +52,6 @@ export default function FarmerPage() {
   }, [userId]);
 
   const onSubmit: SubmitHandler<Inputs> = async (data) => {
-    if (!userId) {
-        toast({ title: "Error", description: "Farmer not identified.", variant: "destructive" });
-        return;
-    }
     try {
       await addProduce(data.produceName, Number(data.numberOfUnits), data.quality);
       toast({
