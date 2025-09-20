@@ -1,5 +1,5 @@
 import { format } from 'date-fns';
-import { ethers, BrowserProvider, Contract, ZeroAddress } from 'ethers';
+import { ethers, BrowserProvider, Contract, ZeroAddress, getAddress } from 'ethers';
 
 // --- Smart Contract Details ---
 const contractAddress = '0x1eB038c7C832BeF1BCe3850dB788b518c2cDbd0b';
@@ -182,8 +182,8 @@ export interface Produce {
 
 // Keep mock names for display purposes, but data comes from blockchain
 export const mockUsers = {
-    '0x3ecf027eb869f93bb064352c5c9df965c4bfe3e8': { name: 'Green Valley Farms', role: 'Farmer' },
-    '0x33c22589a30a70852131e124e0aca0f7b1a35824': { name: 'Fresh Produce Distributors', role: 'Middleman' },
+    '0x3EcF027EB869f93BB064352C5c9dF965C4bfe3e8': { name: 'Green Valley Farms', role: 'Farmer' },
+    '0x33C22589a30a70852131e124e0AcA0f7b1A35824': { name: 'Fresh Produce Distributors', role: 'Middleman' },
 };
 
 
@@ -248,7 +248,7 @@ async function getAllBatches(): Promise<Produce[]> {
 
 export async function getProduceForFarmer(farmerId: string): Promise<Produce[]> {
   const allBatches = await getAllBatches();
-  return allBatches.filter(p => p.farmerId.toLowerCase() === farmerId.toLowerCase());
+  return allBatches.filter(p => getAddress(p.farmerId) === getAddress(farmerId));
 }
 
 export async function getAvailableProduce(): Promise<Produce[]> {
@@ -258,7 +258,7 @@ export async function getAvailableProduce(): Promise<Produce[]> {
 
 export async function getSoldProduceForMiddleman(middlemanId: string): Promise<Produce[]> {
     const allBatches = await getAllBatches();
-    return allBatches.filter(p => p.middlemanId.toLowerCase() === middlemanId.toLowerCase());
+    return allBatches.filter(p => p.middlemanId !== ZeroAddress && getAddress(p.middlemanId) === getAddress(middlemanId));
 }
 
 export async function getProduceById(id: number): Promise<Produce | undefined> {
@@ -288,7 +288,7 @@ export async function addProduce(
 
     try {
         const signer = await (contract.runner as any)?.getAddress();
-        if(signer.toLowerCase() !== farmerId.toLowerCase()){
+        if(getAddress(signer) !== getAddress(farmerId)){
             throw new Error(`Incorrect wallet connected. Please connect with the farmer account: ${farmerId}`);
         }
         console.log("Sending transaction to create batch...");
@@ -311,7 +311,7 @@ export async function assignMiddlemanToBatch(batchId: number, middlemanId: strin
 
     try {
         const signer = await (contract.runner as any)?.getAddress();
-        if(signer.toLowerCase() !== middlemanId.toLowerCase()){
+        if(getAddress(signer) !== getAddress(middlemanId)){
             throw new Error(`Incorrect wallet connected. Please connect with the middleman account: ${middlemanId}`);
         }
         console.log(`Sending transaction to assign middleman to batch ${batchId}...`);
