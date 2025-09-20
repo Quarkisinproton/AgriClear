@@ -278,7 +278,6 @@ export async function getProduceById(id: number): Promise<Produce | undefined> {
 }
 
 export async function addProduce(
-  farmerId: string,
   produceName: string,
   numberOfUnits: number,
   quality: Produce['quality']
@@ -287,12 +286,8 @@ export async function addProduce(
     if (!contract) throw new Error("Contract not available");
 
     try {
-        const signer = await (contract.runner as any)?.getAddress();
-        if(getAddress(signer) !== getAddress(farmerId)){
-            throw new Error(`Incorrect wallet connected. Please connect with the farmer account: ${farmerId}`);
-        }
         console.log("Sending transaction to create batch...");
-        const tx = await contract.createBatch(produceName, numberOfUnits, quality);
+        const tx = await contract.createBatch(produceName, numberOfUnits, quality.trim());
         await tx.wait(); // Wait for transaction to be mined
         console.log("Transaction mined!", tx.hash);
     } catch (error: any) {

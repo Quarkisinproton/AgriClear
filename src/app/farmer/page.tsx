@@ -57,7 +57,7 @@ export default function FarmerPage() {
         return;
     }
     try {
-      await addProduce(userId, data.produceName, Number(data.numberOfUnits), data.quality);
+      await addProduce(data.produceName, Number(data.numberOfUnits), data.quality);
       toast({
         title: "Success",
         description: "New produce batch has been recorded on the blockchain.",
