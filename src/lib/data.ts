@@ -287,7 +287,7 @@ export async function addProduce(
 
     try {
         console.log("Sending transaction to create batch...");
-        const tx = await contract.createBatch(produceName, numberOfUnits, quality);
+        const tx = await contract.createBatch(produceName, numberOfUnits, quality.trim());
         await tx.wait(); // Wait for transaction to be mined
         console.log("Transaction mined!", tx.hash);
     } catch (error: any) {
