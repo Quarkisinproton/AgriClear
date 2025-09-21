@@ -3,10 +3,22 @@ import './globals.css';
 import { AuthProvider } from '@/lib/auth';
 import { Toaster } from "@/components/ui/toaster";
 
+const APP_NAME = "AgriTrack";
+const APP_DESCRIPTION = "Tracking agricultural produce from farm to table.";
+
 export const metadata: Metadata = {
-  title: 'AgriTrack',
-  description: 'Tracking agricultural produce from farm to table.',
-  manifest: '/manifest.json',
+  applicationName: APP_NAME,
+  title: APP_NAME,
+  description: APP_DESCRIPTION,
+  manifest: "/manifest.webmanifest",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: APP_NAME,
+  },
+  formatDetection: {
+    telephone: false,
+  },
 };
 
 export const viewport: Viewport = {
