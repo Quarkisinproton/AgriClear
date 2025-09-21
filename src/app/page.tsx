@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Leaf, Tractor, Users, User, LogIn, Loader2 } from 'lucide-react';
+import { Input } from '@/components/ui/input';
 
 type Role = 'Farmer' | 'Middleman' | 'Consumer';
 
@@ -18,6 +19,7 @@ export default function LoginPage() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoggingIn(true);
+    // For this mock setup, we pass the role directly. The auth logic will handle the mock user.
     await login(role);
     setIsLoggingIn(false);
   };
@@ -35,7 +37,7 @@ export default function LoginPage() {
           <CardDescription>Track produce from farm to table</CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleLogin} className="space-y-6">
+          <form onSubmit={handleLogin} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="role">Select Your Role</Label>
               <Select onValueChange={(value: Role) => setRole(value)} defaultValue={role}>
@@ -61,9 +63,19 @@ export default function LoginPage() {
                 </SelectContent>
               </Select>
             </div>
+            
+            <div className="space-y-2">
+                <Label htmlFor="userId">User ID</Label>
+                <Input id="userId" placeholder="e.g., farmer@example.com" value={`${role.toLowerCase()}@example.com`} readOnly/>
+            </div>
+            <div className="space-y-2">
+                <Label htmlFor="password">Password</Label>
+                <Input id="password" type="password" placeholder="e.g., password123" value="password123" readOnly/>
+            </div>
+
             <Button type="submit" disabled={isLoading} className="w-full bg-accent hover:bg-accent/90 text-accent-foreground">
               {isLoading ? <Loader2 className="animate-spin" /> : <LogIn className="mr-2"/>} 
-              {role === 'Consumer' ? 'Continue as Consumer' : 'Connect Wallet'}
+              Login as {role}
             </Button>
           </form>
         </CardContent>

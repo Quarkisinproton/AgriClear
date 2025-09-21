@@ -181,23 +181,29 @@ export interface Produce {
   statusHistory: { status: string; timestamp: string }[];
 }
 
-// Keep mock names for display purposes, but data comes from blockchain
 export const mockUsers = {
-    '0x3EcF027EB869f93BB064352C5c9dF965C4bfe3e8': { name: 'Green Valley Farms', role: 'Farmer' },
-    '0x33C22589a30a70852131e124e0AcA0f7b1A35824': { name: 'Fresh Produce Distributors', role: 'Middleman' },
+    '0x3EcF027EB869f93BB064352C5c9dF965C4bfe3e8': { id: '0x3EcF027EB869f93BB064352C5c9dF965C4bfe3e8', name: 'Green Valley Farms', role: 'Farmer', email: 'farmer@example.com' },
+    '0x33C22589a30a70852131e124e0AcA0f7b1A35824': { id: '0x33C22589a30a70852131e124e0AcA0f7b1A35824', name: 'Fresh Produce Distributors', role: 'Middleman', email: 'middleman@example.com' },
+    'consumer_user': { id: 'consumer_user', name: 'Consumer', role: 'Consumer', email: 'consumer@example.com' }
 };
 
 
 const getContract = async (forWrite = false) => {
-    if (typeof window.ethereum === 'undefined') {
-        throw new Error('MetaMask is not installed. Please install it to continue.');
-    }
-    if (!contractAddress || contractAddress.startsWith('0xE7499b47fE7587CED7221735dD39eE402E57d03A')) {
-        console.warn("Using a demo contract address. Please replace with your own in src/lib/data.ts");
+    // This function will now require a signer for write operations, but we will mock it for now.
+    // In a real dApp, this is where you would connect to the user's wallet.
+    if (typeof window.ethereum === 'undefined' && forWrite) {
+        console.warn('MetaMask not found. Using a mock signer. Blockchain interactions will not work.');
+        // Return a mock object if we're in a non-wallet environment for testing
         return null;
     }
 
-    const provider = new BrowserProvider(window.ethereum);
+    if (!contractAddress || contractAddress === '0xE7499b47fE7587CED7221735dD39eE402E57d03A') {
+        console.warn("Using a demo contract address. Please replace with your own in src/lib/data.ts");
+        return null;
+    }
+    
+    // For read-only operations or if a wallet is present.
+    const provider = window.ethereum ? new BrowserProvider(window.ethereum) : new ethers.JsonRpcProvider('https://sepolia.infura.io/v3/YOUR_INFURA_ID');
     
     if (forWrite) {
         const signer = await provider.getSigner();
@@ -234,17 +240,21 @@ async function getAllBatches(): Promise<Produce[]> {
     const contract = await getContract();
     if (!contract) return [];
 
-    const batchCount = await contract.getBatchCount();
-    const batches: Produce[] = [];
+    try {
+      const batchCount = await contract.getBatchCount();
+      const batches: Produce[] = [];
 
-    for (let i = 0; i < batchCount; i++) {
-        const batch = await contract.batches(i);
-        // Only add batches that have a valid farmer (i.e., not the zero address)
-        if (batch.farmer !== ZeroAddress) {
-            batches.push(formatBatch(batch));
-        }
+      for (let i = 0; i < batchCount; i++) {
+          const batch = await contract.batches(i);
+          if (batch.farmer !== ZeroAddress) {
+              batches.push(formatBatch(batch));
+          }
+      }
+      return batches.sort((a,b) => b.id - a.id);
+    } catch (e) {
+      console.error("Could not fetch batches, you may be on the wrong network.", e);
+      return []; // Return empty array on error
     }
-    return batches.sort((a,b) => b.id - a.id); // Sort by most recent
 }
 
 export async function getProduceForFarmer(farmerId: string): Promise<Produce[]> {
@@ -267,7 +277,6 @@ export async function getProduceById(id: number): Promise<Produce | undefined> {
   if (!contract) return undefined;
   try {
       const batch = await contract.batches(id);
-      // If the farmer address is the zero address, it means the batch doesn't exist.
       if (batch.farmer === ZeroAddress) {
           return undefined;
       }
@@ -284,23 +293,7 @@ export async function addProduce(
   quality: Produce['quality']
 ): Promise<void> {
     const contract = await getContract(true);
-    if (!contract) throw new Error("Contract not available");
-
-
-	// --- THIS IS THE IMPORTANT PART TO ADD ---
-    console.log("--- Debugging: Checking values before sending to blockchain ---");
-    console.log("Produce Name:", produceName.trim());
-    console.log("Number of Units:", numberOfUnits); // Check if this is 0
-    console.log("Quality:", quality.trim());
-    console.log("----------------------------------------------------------");
-    // --------------------------------------------------------------------
-
-
-	// --- Deeper Debugging ---
-	console.log("Value of numberOfUnits:", numberOfUnits);
-	console.log("TYPE of numberOfUnits:", typeof numberOfUnits); // <-- ADD THIS LINE
-	console.log("----------------------");
-
+    if (!contract) throw new Error("Contract not available or wallet not connected.");
 
     try {
         console.log("Sending transaction to create batch...");
@@ -310,7 +303,7 @@ export async function addProduce(
     } catch (error: any) {
         console.error("Blockchain transaction failed:", error);
         if (error.code === 'ACTION_REJECTED') {
-            throw new Error('Transaction was rejected in MetaMask.');
+            throw new Error('Transaction was rejected in wallet.');
         }
         throw new Error(error.reason || 'An unknown error occurred during the blockchain transaction.');
     }
@@ -319,7 +312,7 @@ export async function addProduce(
 
 export async function assignMiddlemanToBatch(batchId: number): Promise<Produce> {
     const contract = await getContract(true);
-    if (!contract) throw new Error("Contract not available");
+    if (!contract) throw new Error("Contract not available or wallet not connected.");
 
     try {
         console.log(`Sending transaction to assign middleman to batch ${batchId}...`);
@@ -334,7 +327,7 @@ export async function assignMiddlemanToBatch(batchId: number): Promise<Produce> 
     } catch (error: any) {
         console.error("Blockchain transaction failed:", error);
         if (error.code === 'ACTION_REJECTED') {
-            throw new Error('Transaction was rejected in MetaMask.');
+            throw new Error('Transaction was rejected in wallet.');
         }
         throw new Error(error.reason || 'An unknown error occurred during the blockchain transaction.');
     }

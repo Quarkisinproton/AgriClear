@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { BrowserProvider } from 'ethers';
+import { mockUsers } from '@/lib/data';
 
 type Role = 'Farmer' | 'Middleman' | 'Consumer' | null;
 type UserId = string | null;
@@ -11,7 +11,7 @@ interface AuthContextType {
   user: any; 
   role: Role;
   userId: UserId;
-  login: (role: Role) => void;
+  login: (role: Role) => Promise<void>;
   logout: () => void;
   isLoading: boolean;
 }
@@ -27,29 +27,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const pathname = usePathname();
 
   useEffect(() => {
-    const autoLogin = async () => {
+    // This effect handles auto-login based on localStorage
+    const autoLogin = () => {
       try {
         const storedRole = localStorage.getItem('userRole') as Role;
         if (storedRole) {
-          if (storedRole === 'Consumer') {
-             setUser({ email: 'consumer@example.com' });
-             setRole(storedRole);
-             setUserId('consumer_user');
-          } else if (window.ethereum) {
-            const provider = new BrowserProvider(window.ethereum);
-            // Check if we're already connected
-            const accounts = await provider.listAccounts();
-            if (accounts.length > 0) {
-              const signer = await provider.getSigner();
-              const address = await signer.getAddress();
-              setUser({ email: address });
-              setRole(storedRole);
-              setUserId(address);
-            }
+          const mockUser = Object.values(mockUsers).find(u => u.role === storedRole);
+          if (mockUser) {
+            setUser({ email: mockUser.email });
+            setRole(mockUser.role as Role);
+            setUserId(mockUser.id);
           }
         }
       } catch (error) {
-          console.error("Could not access localStorage or MetaMask");
+          console.error("Could not access localStorage");
       } finally {
           setIsLoading(false);
       }
@@ -58,45 +49,31 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   useEffect(() => {
+    // This effect handles redirection if the user is not logged in
     if (!isLoading && !user && pathname !== '/') {
         router.push('/');
     }
   }, [isLoading, user, pathname, router]);
 
-
   const login = async (selectedRole: Role) => {
     if (!selectedRole) return;
     
-    if (selectedRole === 'Consumer') {
-        setUser({ email: 'consumer@example.com' });
-        setRole(selectedRole);
-        setUserId('consumer_user');
-        localStorage.setItem('userRole', selectedRole);
-        router.push('/consumer');
-        return;
-    }
+    // Find the corresponding mock user
+    const mockUser = Object.values(mockUsers).find(u => u.role === selectedRole);
 
-    if (typeof window.ethereum === 'undefined') {
-        alert('MetaMask is not installed. Please install it to use this feature.');
-        return;
-    }
+    if (mockUser) {
+      setUser({ email: mockUser.email });
+      setRole(mockUser.role as Role);
+      setUserId(mockUser.id);
+      localStorage.setItem('userRole', selectedRole);
 
-    try {
-        const provider = new BrowserProvider(window.ethereum);
-        const signer = await provider.getSigner();
-        const address = await signer.getAddress();
-        
-        setUser({ email: address });
-        setRole(selectedRole);
-        setUserId(address);
-        localStorage.setItem('userRole', selectedRole);
-    
-        if (selectedRole === 'Farmer') router.push('/farmer');
-        if (selectedRole === 'Middleman') router.push('/middleman');
-
-    } catch (error) {
-        console.error("Failed to connect with MetaMask", error);
-        alert("Failed to connect wallet. Make sure MetaMask is unlocked and you've approved the connection.");
+      // Redirect based on role
+      if (selectedRole === 'Farmer') router.push('/farmer');
+      if (selectedRole === 'Middleman') router.push('/middleman');
+      if (selectedRole === 'Consumer') router.push('/consumer');
+    } else {
+      console.error(`No mock user found for role: ${selectedRole}`);
+      // Handle login failure, e.g., show a toast message
     }
   };
 
