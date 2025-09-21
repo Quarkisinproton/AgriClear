@@ -167,6 +167,8 @@ const contractABI: any[] = [
 		"type": "function"
 	}
 ];
+
+//ok
 // ------------------------------------------
 
 export interface Produce {
