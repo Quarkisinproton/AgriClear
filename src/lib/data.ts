@@ -1,6 +1,6 @@
 
 import { format } from 'date-fns';
-import { ethers, BrowserProvider, Contract, ZeroAddress } from 'ethers';
+import { ethers, BrowserProvider, Contract, ZeroAddress, type Signer } from 'ethers';
 
 // --- Smart Contract Details ---
 const contractAddress = '0x1eB038c7C832BeF1BCe3850dB788b518c2cDbd0b';
@@ -188,20 +188,20 @@ export const mockUsers = {
 };
 
 
-const getContract = async (signer = false) => {
+const getContract = async (forWrite = false) => {
     if (typeof window.ethereum === 'undefined') {
         throw new Error('MetaMask is not installed. Please install it to continue.');
     }
     if (!contractAddress || contractAddress.startsWith('YOUR_CONTRACT_ADDRESS_HERE')) {
-        // Using a public contract for demo purposes if not set.
-        // Replace with your deployed contract address.
         console.warn("Using a demo contract address. Please replace with your own in src/lib/data.ts");
         return null;
     }
 
     const provider = new BrowserProvider(window.ethereum);
-    if (signer) {
-        return new Contract(contractAddress, contractABI, await provider.getSigner());
+    
+    if (forWrite) {
+        const signer = await provider.getSigner();
+        return new Contract(contractAddress, contractABI, signer);
     } else {
         return new Contract(contractAddress, contractABI, provider);
     }
@@ -323,5 +323,3 @@ export async function assignMiddlemanToBatch(batchId: number): Promise<Produce> 
         throw new Error(error.reason || 'An unknown error occurred during the blockchain transaction.');
     }
 }
-
-    
