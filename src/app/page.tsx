@@ -4,21 +4,25 @@ import { useState } from 'react';
 import { useAuth } from '@/lib/auth';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Leaf, Tractor, Users, User } from 'lucide-react';
+import { Leaf, Tractor, Users, User, LogIn, Loader2 } from 'lucide-react';
 
 type Role = 'Farmer' | 'Middleman' | 'Consumer';
 
 export default function LoginPage() {
-  const { login } = useAuth();
+  const { login, isLoading: isAuthLoading } = useAuth();
   const [role, setRole] = useState<Role>('Farmer');
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
   
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    login(role);
+    setIsLoggingIn(true);
+    await login(role);
+    setIsLoggingIn(false);
   };
+
+  const isLoading = isAuthLoading || isLoggingIn;
 
   return (
     <main className="flex items-center justify-center min-h-screen bg-background p-4">
@@ -31,17 +35,9 @@ export default function LoginPage() {
           <CardDescription>Track produce from farm to table</CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleLogin} className="space-y-4">
+          <form onSubmit={handleLogin} className="space-y-6">
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input id="email" type="email" placeholder="user@example.com" defaultValue="user@example.com" required />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <Input id="password" type="password" defaultValue="password" required />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="role">Role</Label>
+              <Label htmlFor="role">Select Your Role</Label>
               <Select onValueChange={(value: Role) => setRole(value)} defaultValue={role}>
                 <SelectTrigger id="role" className="w-full">
                   <SelectValue placeholder="Select a role" />
@@ -65,7 +61,10 @@ export default function LoginPage() {
                 </SelectContent>
               </Select>
             </div>
-            <Button type="submit" className="w-full bg-accent hover:bg-accent/90 text-accent-foreground">Login</Button>
+            <Button type="submit" disabled={isLoading} className="w-full bg-accent hover:bg-accent/90 text-accent-foreground">
+              {isLoading ? <Loader2 className="animate-spin" /> : <LogIn className="mr-2"/>} 
+              {role === 'Consumer' ? 'Continue as Consumer' : 'Connect Wallet'}
+            </Button>
           </form>
         </CardContent>
       </Card>

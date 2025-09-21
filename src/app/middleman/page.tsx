@@ -26,11 +26,11 @@ export default function MiddlemanPage() {
   const { toast } = useToast();
 
   const fetchProduce = async () => {
-    if (!userId) return;
     setIsLoading(true);
     try {
         const availableData = await getAvailableProduce();
-        const soldData = await getSoldProduceForMiddleman(userId);
+        // Only try to fetch sold data if we have a connected wallet
+        const soldData = (userId && userId !== 'consumer_user') ? await getSoldProduceForMiddleman(userId) : [];
         
         setAvailableList(availableData);
         setMySoldList(soldData);
@@ -43,9 +43,7 @@ export default function MiddlemanPage() {
   };
 
   useEffect(() => {
-    if (userId) {
-        fetchProduce();
-    }
+    fetchProduce();
   }, [userId]);
   
   const handlePurchase = async (produce: Produce) => {
@@ -55,7 +53,7 @@ export default function MiddlemanPage() {
     }
     setIsUpdating(produce.id);
     try {
-      const updatedProduce = await assignMiddlemanToBatch(produce.id, userId);
+      const updatedProduce = await assignMiddlemanToBatch(produce.id);
       if (updatedProduce) {
         toast({
           title: "Batch Purchased",

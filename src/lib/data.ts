@@ -278,7 +278,6 @@ export async function getProduceById(id: number): Promise<Produce | undefined> {
 }
 
 export async function addProduce(
-  farmerId: string,
   produceName: string,
   numberOfUnits: number,
   quality: Produce['quality']
@@ -287,12 +286,8 @@ export async function addProduce(
     if (!contract) throw new Error("Contract not available");
 
     try {
-        const signer = await (contract.runner as any)?.getAddress();
-        if(signer.toLowerCase() !== farmerId.toLowerCase()){
-            throw new Error(`Incorrect wallet connected. Please connect with the farmer account: ${farmerId}`);
-        }
         console.log("Sending transaction to create batch...");
-        const tx = await contract.createBatch(produceName, numberOfUnits, quality);
+        const tx = await contract.createBatch(produceName.trim(), numberOfUnits, quality.trim());
         await tx.wait(); // Wait for transaction to be mined
         console.log("Transaction mined!", tx.hash);
     } catch (error: any) {
@@ -300,20 +295,16 @@ export async function addProduce(
         if (error.code === 'ACTION_REJECTED') {
             throw new Error('Transaction was rejected in MetaMask.');
         }
-        throw new Error(error.message || 'An unknown error occurred during the blockchain transaction.');
+        throw new Error(error.reason || 'An unknown error occurred during the blockchain transaction.');
     }
 }
 
 
-export async function assignMiddlemanToBatch(batchId: number, middlemanId: string): Promise<Produce> {
+export async function assignMiddlemanToBatch(batchId: number): Promise<Produce> {
     const contract = await getContract(true);
     if (!contract) throw new Error("Contract not available");
 
     try {
-        const signer = await (contract.runner as any)?.getAddress();
-        if(signer.toLowerCase() !== middlemanId.toLowerCase()){
-            throw new Error(`Incorrect wallet connected. Please connect with the middleman account: ${middlemanId}`);
-        }
         console.log(`Sending transaction to assign middleman to batch ${batchId}...`);
         const tx = await contract.assignMiddleman(batchId);
         await tx.wait();
@@ -328,6 +319,6 @@ export async function assignMiddlemanToBatch(batchId: number, middlemanId: strin
         if (error.code === 'ACTION_REJECTED') {
             throw new Error('Transaction was rejected in MetaMask.');
         }
-        throw new Error(error.message || 'An unknown error occurred during the blockchain transaction.');
+        throw new Error(error.reason || 'An unknown error occurred during the blockchain transaction.');
     }
 }

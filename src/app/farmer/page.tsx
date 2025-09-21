@@ -22,7 +22,7 @@ type Inputs = {
 };
 
 export default function FarmerPage() {
-  const { user, role, userId } = useAuth();
+  const { userId } = useAuth();
   const [produceList, setProduceList] = useState<Produce[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
@@ -46,18 +46,24 @@ export default function FarmerPage() {
   };
   
   useEffect(() => {
-    if (userId) {
+    // Only fetch if a userId is present (wallet is connected)
+    if (userId && userId !== 'consumer_user') {
       fetchProduce();
+    } else {
+        // If not connected, don't show loader, just empty list
+        setIsLoading(false);
+        setProduceList([]);
     }
   }, [userId]);
 
   const onSubmit: SubmitHandler<Inputs> = async (data) => {
-    if (!userId) {
-        toast({ title: "Error", description: "User ID not found. Cannot create batch.", variant: "destructive" });
+    const units = Number(data.numberOfUnits);
+    if (isNaN(units) || units <= 0) {
+        toast({ title: "Invalid Input", description: "Number of units must be greater than zero.", variant: "destructive" });
         return;
     }
     try {
-      await addProduce(userId, data.produceName, Number(data.numberOfUnits), data.quality);
+      await addProduce(data.produceName, units, data.quality);
       toast({
         title: "Success",
         description: "New produce batch has been recorded on the blockchain.",
