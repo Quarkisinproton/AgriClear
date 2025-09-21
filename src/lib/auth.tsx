@@ -3,7 +3,6 @@
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { BrowserProvider } from 'ethers';
-import { runHelloWorldTest } from '@/lib/data';
 
 type Role = 'Farmer' | 'Middleman' | 'Consumer' | null;
 type UserId = string | null;
@@ -86,10 +85,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         const provider = new BrowserProvider(window.ethereum);
         const signer = await provider.getSigner();
         const address = await signer.getAddress();
-        
-        // --- Call the test function here for debugging ---
-        await runHelloWorldTest();
-        // ---------------------------------------------
         
         setUser({ email: address });
         setRole(selectedRole);
