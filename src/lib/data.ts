@@ -5,167 +5,51 @@ import { ethers, BrowserProvider, Contract, ZeroAddress, type Signer } from 'eth
 // --- Smart Contract Details ---
 const contractAddress = '0x1eB038c7C832BeF1BCe3850dB788b518c2cDbd0b';
 const contractABI: any[] = [
-    {
-      "anonymous": false,
-      "inputs": [
-        {
-          "indexed": true,
-          "internalType": "uint256",
-          "name": "batchId",
-          "type": "uint256"
-        },
-        {
-          "indexed": false,
-          "internalType": "string",
-          "name": "produceName",
-          "type": "string"
-        },
-        {
-          "indexed": true,
-          "internalType": "address",
-          "name": "farmer",
-          "type": "address"
-        }
-      ],
-      "name": "BatchCreated",
-      "type": "event"
-    },
-    {
-      "anonymous": false,
-      "inputs": [
-        {
-          "indexed": true,
-          "internalType": "uint256",
-          "name": "batchId",
-          "type": "uint256"
-        },
-        {
-          "indexed": true,
-          "internalType": "address",
-          "name": "farmer",
-          "type": "address"
-        },
-        {
-          "indexed": true,
-          "internalType": "address",
-          "name": "middleman",
-          "type": "address"
-        }
-      ],
-      "name": "BatchSold",
-      "type": "event"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "uint256",
-          "name": "_batchId",
-          "type": "uint256"
-        }
-      ],
-      "name": "assignMiddleman",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "uint256",
-          "name": "",
-          "type": "uint256"
-        }
-      ],
-      "name": "batches",
-      "outputs": [
-        {
-          "internalType": "uint256",
-          "name": "batchId",
-          "type": "uint256"
-        },
-        {
-          "internalType": "string",
-          "name": "produceName",
-          "type": "string"
-        },
-        {
-          "internalType": "uint256",
-          "name": "quantity",
-          "type": "uint256"
-        },
-        {
-          "internalType": "string",
-          "name": "quality",
-          "type": "string"
-        },
-        {
-          "internalType": "address",
-          "name": "farmer",
-          "type": "address"
-        },
-        {
-          "internalType": "address",
-          "name": "middleman",
-          "type": "address"
-        },
-        {
-          "internalType": "uint256",
-          "name": "timestamp",
-          "type": "uint256"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "string",
-          "name": "_produceName",
-          "type": "string"
-        },
-        {
-          "internalType": "uint256",
-          "name": "_quantity",
-          "type": "uint256"
-        },
-        {
-          "internalType": "string",
-          "name": "_quality",
-          "type": "string"
-        }
-      ],
-      "name": "createBatch",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [],
-      "name": "getBatchCount",
-      "outputs": [
-        {
-          "internalType": "uint256",
-          "name": "",
-          "type": "uint256"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [],
-      "name": "nextBatchId",
-      "outputs": [
-        {
-          "internalType": "uint256",
-          "name": "",
-          "type": "uint256"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    }
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"internalType": "address",
+				"name": "who",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "newNumber",
+				"type": "uint256"
+			}
+		],
+		"name": "NumberSet",
+		"type": "event"
+	},
+	{
+		"inputs": [],
+		"name": "myNumber",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "_newNumber",
+				"type": "uint256"
+			}
+		],
+		"name": "setNumber",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	}
 ];
 // ------------------------------------------
 
@@ -192,7 +76,7 @@ const getContract = async (forWrite = false) => {
     if (typeof window.ethereum === 'undefined') {
         throw new Error('MetaMask is not installed. Please install it to continue.');
     }
-    if (!contractAddress || contractAddress.startsWith('YOUR_CONTRACT_ADDRESS_HERE')) {
+    if (!contractAddress || contractAddress.startsWith('0x6e72f4C0CC6B74A66eb22bF4B25EAdd3DA97eefF')) {
         console.warn("Using a demo contract address. Please replace with your own in src/lib/data.ts");
         return null;
     }
@@ -286,6 +170,22 @@ export async function addProduce(
     const contract = await getContract(true);
     if (!contract) throw new Error("Contract not available");
 
+
+	// --- THIS IS THE IMPORTANT PART TO ADD ---
+    console.log("--- Debugging: Checking values before sending to blockchain ---");
+    console.log("Produce Name:", produceName.trim());
+    console.log("Number of Units:", numberOfUnits); // Check if this is 0
+    console.log("Quality:", quality.trim());
+    console.log("----------------------------------------------------------");
+    // --------------------------------------------------------------------
+
+
+	// --- Deeper Debugging ---
+	console.log("Value of numberOfUnits:", numberOfUnits);
+	console.log("TYPE of numberOfUnits:", typeof numberOfUnits); // <-- ADD THIS LINE
+	console.log("----------------------");
+
+
     try {
         console.log("Sending transaction to create batch...");
         const tx = await contract.createBatch(produceName.trim(), numberOfUnits, quality.trim());
@@ -321,5 +221,20 @@ export async function assignMiddlemanToBatch(batchId: number): Promise<Produce> 
             throw new Error('Transaction was rejected in MetaMask.');
         }
         throw new Error(error.reason || 'An unknown error occurred during the blockchain transaction.');
+    }
+}
+export async function runHelloWorldTest(): Promise<void> {
+    console.log("Running HelloWorld Test...");
+    const contract = await getContract(true);
+    if (!contract) throw new Error("Contract not available");
+
+    try {
+        const randomNumber = 42;
+        console.log("Sending test number:", randomNumber);
+        const tx = await contract.setNumber(randomNumber);
+        await tx.wait();
+        console.log("HelloWorld Test SUCCESSFUL!", tx.hash);
+    } catch (error) {
+        console.error("HelloWorld Test FAILED:", error);
     }
 }
