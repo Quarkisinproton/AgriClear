@@ -1,3 +1,4 @@
+
 import { format } from 'date-fns';
 import { ethers, BrowserProvider, Contract, ZeroAddress } from 'ethers';
 
@@ -322,3 +323,5 @@ export async function assignMiddlemanToBatch(batchId: number): Promise<Produce> 
         throw new Error(error.reason || 'An unknown error occurred during the blockchain transaction.');
     }
 }
+
+    
