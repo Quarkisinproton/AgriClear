@@ -9,24 +9,140 @@ const contractABI: any[] = [
 		"anonymous": false,
 		"inputs": [
 			{
-				"indexed": false,
-				"internalType": "address",
-				"name": "who",
-				"type": "address"
+				"indexed": true,
+				"internalType": "uint256",
+				"name": "batchId",
+				"type": "uint256"
 			},
 			{
 				"indexed": false,
-				"internalType": "uint256",
-				"name": "newNumber",
-				"type": "uint256"
+				"internalType": "string",
+				"name": "produceName",
+				"type": "string"
+			},
+			{
+				"indexed": true,
+				"internalType": "address",
+				"name": "farmer",
+				"type": "address"
 			}
 		],
-		"name": "NumberSet",
+		"name": "BatchCreated",
 		"type": "event"
 	},
 	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": true,
+				"internalType": "uint256",
+				"name": "batchId",
+				"type": "uint256"
+			},
+			{
+				"indexed": true,
+				"internalType": "address",
+				"name": "farmer",
+				"type": "address"
+			},
+			{
+				"indexed": true,
+				"internalType": "address",
+				"name": "middleman",
+				"type": "address"
+			}
+		],
+		"name": "BatchSold",
+		"type": "event"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "_batchId",
+				"type": "uint256"
+			}
+		],
+		"name": "assignMiddleman",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"name": "batches",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "batchId",
+				"type": "uint256"
+			},
+			{
+				"internalType": "string",
+				"name": "produceName",
+				"type": "string"
+			},
+			{
+				"internalType": "uint256",
+				"name": "quantity",
+				"type": "uint256"
+			},
+			{
+				"internalType": "string",
+				"name": "quality",
+				"type": "string"
+			},
+			{
+				"internalType": "address",
+				"name": "farmer",
+				"type": "address"
+			},
+			{
+				"internalType": "address",
+				"name": "middleman",
+				"type": "address"
+			},
+			{
+				"internalType": "uint256",
+				"name": "timestamp",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "string",
+				"name": "_produceName",
+				"type": "string"
+			},
+			{
+				"internalType": "uint256",
+				"name": "_quantity",
+				"type": "uint256"
+			},
+			{
+				"internalType": "string",
+				"name": "_quality",
+				"type": "string"
+			}
+		],
+		"name": "createBatch",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
 		"inputs": [],
-		"name": "myNumber",
+		"name": "getBatchCount",
 		"outputs": [
 			{
 				"internalType": "uint256",
@@ -38,16 +154,16 @@ const contractABI: any[] = [
 		"type": "function"
 	},
 	{
-		"inputs": [
+		"inputs": [],
+		"name": "nextBatchId",
+		"outputs": [
 			{
 				"internalType": "uint256",
-				"name": "_newNumber",
+				"name": "",
 				"type": "uint256"
 			}
 		],
-		"name": "setNumber",
-		"outputs": [],
-		"stateMutability": "nonpayable",
+		"stateMutability": "view",
 		"type": "function"
 	}
 ];
@@ -76,7 +192,7 @@ const getContract = async (forWrite = false) => {
     if (typeof window.ethereum === 'undefined') {
         throw new Error('MetaMask is not installed. Please install it to continue.');
     }
-    if (!contractAddress || contractAddress.startsWith('0x6e72f4C0CC6B74A66eb22bF4B25EAdd3DA97eefF')) {
+    if (!contractAddress || contractAddress.startsWith('0xE7499b47fE7587CED7221735dD39eE402E57d03A')) {
         console.warn("Using a demo contract address. Please replace with your own in src/lib/data.ts");
         return null;
     }
@@ -221,20 +337,5 @@ export async function assignMiddlemanToBatch(batchId: number): Promise<Produce> 
             throw new Error('Transaction was rejected in MetaMask.');
         }
         throw new Error(error.reason || 'An unknown error occurred during the blockchain transaction.');
-    }
-}
-export async function runHelloWorldTest(): Promise<void> {
-    console.log("Running HelloWorld Test...");
-    const contract = await getContract(true);
-    if (!contract) throw new Error("Contract not available");
-
-    try {
-        const randomNumber = 42;
-        console.log("Sending test number:", randomNumber);
-        const tx = await contract.setNumber(randomNumber);
-        await tx.wait();
-        console.log("HelloWorld Test SUCCESSFUL!", tx.hash);
-    } catch (error) {
-        console.error("HelloWorld Test FAILED:", error);
     }
 }
