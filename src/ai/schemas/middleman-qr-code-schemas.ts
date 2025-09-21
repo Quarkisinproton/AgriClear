@@ -8,7 +8,7 @@
 import { z } from 'zod';
 
 export const GenerateQrCodeInputSchema = z.object({
-  productId: z.string().describe('The unique ID of the product batch.'),
+  productId: z.string().describe('The unique batch ID of the product from the blockchain.'),
 });
 export type GenerateQrCodeInput = z.infer<typeof GenerateQrCodeInputSchema>;
 
@@ -16,7 +16,7 @@ export const GenerateQrCodeOutputSchema = z.object({
   qrCodeDataUri: z
     .string()
     .describe(
-      'The QR code as a data URI (PNG format) that encodes the product ID.'
+      'The QR code as a data URI (PNG format) that encodes the product batch ID.'
     ),
 });
 export type GenerateQrCodeOutput = z.infer<typeof GenerateQrCodeOutputSchema>;

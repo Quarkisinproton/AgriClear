@@ -4,7 +4,7 @@ import AppLayout from "@/components/AppLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { getProduceById, Produce, mockUsers } from "@/lib/data";
 import { cn } from "@/lib/utils";
-import { ArrowLeft, CheckCircle, Package, Tractor, Loader2, DollarSign, User, Users, Hash, ShieldCheck } from "lucide-react";
+import { ArrowLeft, CheckCircle, Package, Tractor, Loader2, DollarSign, User, Users, Hash, ShieldCheck, Box } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -21,8 +21,9 @@ export default function ProductDetailsPage() {
   useEffect(() => {
     if (id) {
       setProduce(undefined);
-      getProduceById(id).then(data => {
-        setTimeout(() => setProduce(data || null), 500); // Simulate network latency
+      // The ID from the URL is the batchId for the contract
+      getProduceById(Number(id)).then(data => {
+        setProduce(data || null);
       });
     }
   }, [id]);
@@ -31,6 +32,7 @@ export default function ProductDetailsPage() {
     if (status === 'Harvested' || status === 'Request Pending') return <Tractor className="h-5 w-5" />;
     if (status === 'Processed') return <Package className="h-5 w-5" />;
     if (status === 'Sold') return <DollarSign className="h-5 w-5" />;
+    if (status === 'Created') return <Box className="h-5 w-5" />;
     return <CheckCircle className="h-5 w-5" />;
   };
   
@@ -61,14 +63,12 @@ export default function ProductDetailsPage() {
   );
 
   const getFarmerName = (id: string) => {
-    const key = Object.keys(mockUsers).find(k => k.toLowerCase() === id.toLowerCase()) as MockUserKeys | undefined;
-    return key ? mockUsers[key]?.name : 'Unknown';
+    return mockUsers[id as MockUserKeys]?.name || 'Unknown Farmer';
   }
   
   const getMiddlemanName = (id?: string) => {
-    if (!id) return 'N/A';
-    const key = Object.keys(mockUsers).find(k => k.toLowerCase() === id.toLowerCase()) as MockUserKeys | undefined;
-    return key ? mockUsers[key]?.name : 'N/A';
+    if (!id || id === '0x0000000000000000000000000000000000000000') return 'N/A';
+    return mockUsers[id as MockUserKeys]?.name || 'Unknown Distributor';
   }
 
   return (
@@ -79,12 +79,12 @@ export default function ProductDetailsPage() {
       
       <Card className="w-full max-w-2xl mx-auto shadow-lg">
         <CardHeader>
-          {produce === undefined && <CardTitle> <Loader2 className="inline-block mr-2 animate-spin"/> Loading product details...</CardTitle>}
-          {produce === null && <CardTitle>Product Not Found</CardTitle>}
+          {produce === undefined && <CardTitle> <Loader2 className="inline-block mr-2 animate-spin"/> Loading product details from the blockchain...</CardTitle>}
+          {produce === null && <CardTitle>Product Not Found on Blockchain</CardTitle>}
           {produce && (
             <>
               <CardTitle className="text-3xl font-headline">{produce.produceName}</CardTitle>
-              <CardDescription>Product ID: {produce.id}</CardDescription>
+              <CardDescription>Batch ID: {produce.id.toString()}</CardDescription>
             </>
           )}
         </CardHeader>
@@ -105,16 +105,9 @@ export default function ProductDetailsPage() {
 
                   <p className="text-muted-foreground">Number of Units:</p>
                   <p>{produce.numberOfUnits}</p>
-
-                  <p className="text-muted-foreground">Current Status:</p>
-                  <p className="font-medium text-primary">{produce.status}</p>
-
-                   {produce.blockchainTransactionHash && (
-                    <>
-                        <p className="text-muted-foreground flex items-center gap-2"><Hash /> Transaction Hash:</p>
-                        <p className="truncate text-xs font-mono bg-muted px-2 py-1 rounded">{produce.blockchainTransactionHash}</p>
-                    </>
-                   )}
+                 
+                   <p className="text-muted-foreground flex items-center gap-2"><Hash /> Transaction Hash:</p>
+                   <p className="truncate text-xs font-mono bg-muted px-2 py-1 rounded">Batch creation record</p>
                 </div>
               </div>
               <div>
@@ -140,7 +133,7 @@ export default function ProductDetailsPage() {
           </CardContent>
         ) : (
           <CardContent>
-            <p className="text-center py-8 text-muted-foreground">We couldn't find any details for this product ID. Please check the ID and try again.</p>
+            <p className="text-center py-8 text-muted-foreground">We couldn't find any details for this product ID on the blockchain. Please check the ID and try again.</p>
           </CardContent>
         )}
       </Card>

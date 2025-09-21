@@ -2,26 +2,21 @@
 
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
+import { mockUsers } from '@/lib/data';
 
 type Role = 'Farmer' | 'Middleman' | 'Consumer' | null;
-type UserId = '0x3EcF027EB869f93BB064352C5c9dF965C4bfe3e8' | '0x33C22589a30a70852131e124e0AcA0f7b1A35824' | 'consumer_user' | null;
+type UserId = string | null;
 
 interface AuthContextType {
   user: any; 
   role: Role;
   userId: UserId;
-  login: (role: Role) => void;
+  login: (role: Role) => Promise<void>;
   logout: () => void;
   isLoading: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
-const roleToUserIdMap: Record<NonNullable<Role>, UserId> = {
-    Farmer: '0x3EcF027EB869f93BB064352C5c9dF965C4bfe3e8',
-    Middleman: '0x33C22589a30a70852131e124e0AcA0f7b1A35824',
-    Consumer: 'consumer_user',
-}
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<any>(null);
@@ -32,43 +27,54 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const pathname = usePathname();
 
   useEffect(() => {
-    try {
-      const storedRole = localStorage.getItem('userRole') as Role;
-      if (storedRole) {
-          setUser({ email: 'user@example.com' });
-          setRole(storedRole);
-          setUserId(roleToUserIdMap[storedRole]);
+    // This effect handles auto-login based on localStorage
+    const autoLogin = () => {
+      try {
+        const storedRole = localStorage.getItem('userRole') as Role;
+        if (storedRole) {
+          const mockUser = Object.values(mockUsers).find(u => u.role === storedRole);
+          if (mockUser) {
+            setUser({ email: mockUser.email });
+            setRole(mockUser.role as Role);
+            setUserId(mockUser.id);
+          }
+        }
+      } catch (error) {
+          console.error("Could not access localStorage");
+      } finally {
+          setIsLoading(false);
       }
-    } catch (error) {
-        console.error("Could not access localStorage");
-    } finally {
-        setIsLoading(false);
     }
+    autoLogin();
   }, []);
 
   useEffect(() => {
+    // This effect handles redirection if the user is not logged in
     if (!isLoading && !user && pathname !== '/') {
         router.push('/');
     }
   }, [isLoading, user, pathname, router]);
 
-
-  const login = (selectedRole: Role) => {
+  const login = async (selectedRole: Role) => {
     if (!selectedRole) return;
-    setUser({ email: 'user@example.com' });
-    setRole(selectedRole);
-    const newUserId = roleToUserIdMap[selectedRole];
-    setUserId(newUserId);
-
-    try {
-        localStorage.setItem('userRole', selectedRole);
-    } catch (error) {
-        console.error("Could not access localStorage");
-    }
     
-    if (selectedRole === 'Farmer') router.push('/farmer');
-    if (selectedRole === 'Middleman') router.push('/middleman');
-    if (selectedRole === 'Consumer') router.push('/consumer');
+    // Find the corresponding mock user
+    const mockUser = Object.values(mockUsers).find(u => u.role === selectedRole);
+
+    if (mockUser) {
+      setUser({ email: mockUser.email });
+      setRole(mockUser.role as Role);
+      setUserId(mockUser.id);
+      localStorage.setItem('userRole', selectedRole);
+
+      // Redirect based on role
+      if (selectedRole === 'Farmer') router.push('/farmer');
+      if (selectedRole === 'Middleman') router.push('/middleman');
+      if (selectedRole === 'Consumer') router.push('/consumer');
+    } else {
+      console.error(`No mock user found for role: ${selectedRole}`);
+      // Handle login failure, e.g., show a toast message
+    }
   };
 
   const logout = () => {
