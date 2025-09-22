@@ -3,7 +3,7 @@ import { ethers, BrowserProvider, Contract } from 'ethers';
 
 // --- IMPORTANT: Smart Contract Details ---
 // You must deploy your contract and paste the address and ABI here.
-const contractAddress = '0x1eB038c7C832BeF1BCe3850dB788b518c2cDbd0b';
+const contractAddress = '0xA7C44D8cF1C83bD9380456D6562cfEc7B9065B7B';
 const contractABI: any[] = [
 	{
 		"anonymous": false,
