@@ -171,6 +171,7 @@ const contractABI: any[] = [
 
 export interface Produce {
   id: string;
+  batchId?: number;
   produceName: string;
   numberOfUnits: number;
   quality: 'Grade A' | 'Grade B' | 'Grade C';
@@ -242,10 +243,9 @@ async function recordTransactionOnBlockchain(
         // Create a contract instance
         const supplyChainContract = new Contract(contractAddress, contractABI, signer);
 
-        // Call the 'recordBatch' function on the smart contract
+        // Call the 'createBatch' function on the smart contract
         console.log("Sending transaction to blockchain...");
-        const tx = await supplyChainContract.recordBatch(
-            produce.farmerId,
+        const tx = await supplyChainContract.createBatch(
             produce.produceName,
             produce.numberOfUnits,
             produce.quality
