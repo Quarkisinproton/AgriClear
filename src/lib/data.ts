@@ -1,6 +1,13 @@
 import { format } from 'date-fns';
 import { ethers, BrowserProvider, Contract } from 'ethers';
 
+// Allow TypeScript to recognize window.ethereum injected by MetaMask
+declare global {
+  interface Window {
+    ethereum?: any;
+  }
+}
+
 // --- IMPORTANT: Smart Contract Details ---
 // You must deploy your contract and paste the address and ABI here.
 const contractAddress = '0xA7C44D8cF1C83bD9380456D6562cfEc7B9065B7B';
