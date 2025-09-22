@@ -5,152 +5,167 @@ import { ethers, BrowserProvider, Contract } from 'ethers';
 // You must deploy your contract and paste the address and ABI here.
 const contractAddress = '0x1eB038c7C832BeF1BCe3850dB788b518c2cDbd0b';
 const contractABI: any[] = [
-  // This is the Application Binary Interface (ABI) of your contract.
-  // You can get this from Remix after you compile your contract.
-  // It's a JSON array that describes how to interact with your contract.
-  // Example:
-  // {
-  //   "inputs": [],
-  //   "name": "getBatchCount",
-  //   "outputs": [ { "internalType": "uint256", "name": "", "type": "uint256" } ],
-  //   "stateMutability": "view",
-  //   "type": "function"
-  // },
-  // ... Paste the full ABI array here
-    {
-      "anonymous": false,
-      "inputs": [
-        {
-          "indexed": true,
-          "internalType": "uint256",
-          "name": "batchId",
-          "type": "uint256"
-        },
-        {
-          "indexed": false,
-          "internalType": "string",
-          "name": "produceName",
-          "type": "string"
-        },
-        {
-          "indexed": true,
-          "internalType": "address",
-          "name": "farmer",
-          "type": "address"
-        },
-        {
-          "indexed": true,
-          "internalType": "address",
-          "name": "middleman",
-          "type": "address"
-        }
-      ],
-      "name": "BatchRecorded",
-      "type": "event"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "address",
-          "name": "_farmerAddress",
-          "type": "address"
-        },
-        {
-          "internalType": "string",
-          "name": "_produceName",
-          "type": "string"
-        },
-        {
-          "internalType": "uint256",
-          "name": "_quantity",
-          "type": "uint256"
-        },
-        {
-          "internalType": "string",
-          "name": "_quality",
-          "type": "string"
-        }
-      ],
-      "name": "recordBatch",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "uint256",
-          "name": "",
-          "type": "uint256"
-        }
-      ],
-      "name": "batches",
-      "outputs": [
-        {
-          "internalType": "uint256",
-          "name": "batchId",
-          "type": "uint256"
-        },
-        {
-          "internalType": "string",
-          "name": "produceName",
-          "type": "string"
-        },
-        {
-          "internalType": "uint256",
-          "name": "quantity",
-          "type": "uint256"
-        },
-        {
-          "internalType": "string",
-          "name": "quality",
-          "type": "string"
-        },
-        {
-          "internalType": "address",
-          "name": "farmer",
-          "type": "address"
-        },
-        {
-          "internalType": "address",
-          "name": "middleman",
-          "type": "address"
-        },
-        {
-          "internalType": "uint256",
-          "name": "timestamp",
-          "type": "uint256"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [],
-      "name": "getBatchCount",
-      "outputs": [
-        {
-          "internalType": "uint256",
-          "name": "",
-          "type": "uint256"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [],
-      "name": "nextBatchId",
-      "outputs": [
-        {
-          "internalType": "uint256",
-          "name": "",
-          "type": "uint256"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    }
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": true,
+				"internalType": "uint256",
+				"name": "batchId",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"internalType": "string",
+				"name": "produceName",
+				"type": "string"
+			},
+			{
+				"indexed": true,
+				"internalType": "address",
+				"name": "farmer",
+				"type": "address"
+			}
+		],
+		"name": "BatchCreated",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": true,
+				"internalType": "uint256",
+				"name": "batchId",
+				"type": "uint256"
+			},
+			{
+				"indexed": true,
+				"internalType": "address",
+				"name": "farmer",
+				"type": "address"
+			},
+			{
+				"indexed": true,
+				"internalType": "address",
+				"name": "middleman",
+				"type": "address"
+			}
+		],
+		"name": "BatchSold",
+		"type": "event"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "_batchId",
+				"type": "uint256"
+			}
+		],
+		"name": "assignMiddleman",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"name": "batches",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "batchId",
+				"type": "uint256"
+			},
+			{
+				"internalType": "string",
+				"name": "produceName",
+				"type": "string"
+			},
+			{
+				"internalType": "uint256",
+				"name": "quantity",
+				"type": "uint256"
+			},
+			{
+				"internalType": "string",
+				"name": "quality",
+				"type": "string"
+			},
+			{
+				"internalType": "address",
+				"name": "farmer",
+				"type": "address"
+			},
+			{
+				"internalType": "address",
+				"name": "middleman",
+				"type": "address"
+			},
+			{
+				"internalType": "uint256",
+				"name": "timestamp",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "string",
+				"name": "_produceName",
+				"type": "string"
+			},
+			{
+				"internalType": "uint256",
+				"name": "_quantity",
+				"type": "uint256"
+			},
+			{
+				"internalType": "string",
+				"name": "_quality",
+				"type": "string"
+			}
+		],
+		"name": "createBatch",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "getBatchCount",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "nextBatchId",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	}
 ];
 // ------------------------------------------
 
@@ -212,7 +227,7 @@ async function recordTransactionOnBlockchain(
     if (typeof window.ethereum === 'undefined') {
         throw new Error('MetaMask is not installed. Please install it to continue.');
     }
-    if (!contractAddress || contractAddress === 'YOUR_CONTRACT_ADDRESS_HERE') {
+    if (!contractAddress || contractAddress === '0xA7C44D8cF1C83bD9380456D6562cfEc7B9065B7B') {
         throw new Error('Contract address is not set. Please update it in src/lib/data.ts');
     }
 
