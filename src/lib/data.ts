@@ -228,7 +228,7 @@ async function recordTransactionOnBlockchain(
     if (typeof window.ethereum === 'undefined') {
         throw new Error('MetaMask is not installed. Please install it to continue.');
     }
-    if (!contractAddress || contractAddress === '0xA7C44D8cF1C83bD9380456D6562cfEc7B9065B7B') {
+    if (!contractAddress) {
         throw new Error('Contract address is not set. Please update it in src/lib/data.ts');
     }
 
