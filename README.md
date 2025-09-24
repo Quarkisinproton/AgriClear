@@ -1,5 +1,7 @@
 # Prototype Website for SIH(Smart India Hackathon)
 
-*Integration of Blockchain into Agriculture Supply chain.*
+Problem Statement:*Integration of Blockchain into Agriculture Supply chain.*
+
+PWA capabilitys included.
 
 Prototype Website:https://agri-clear.vercel.app/
