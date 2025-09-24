@@ -1,5 +1,5 @@
-# Firebase Studio
+# Prototype Website for SIH(Smart India Hackathon)
 
-This is a NextJS starter in Firebase Studio.
+*Integration of Blockchain into Agriculture Supply chain.*
 
-To get started, take a look at src/app/page.tsx.
+Prototype Website:https://agri-clear.vercel.app/
